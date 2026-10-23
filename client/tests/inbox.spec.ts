@@ -74,4 +74,20 @@ test.describe('Tier 3 E2E Browser Test: Revenue Intelligence Inbox', () => {
 
     await page.click('button:has-text("Close")');
   });
+
+  test('E2E 7: Interacts with luxury status dropdown and changes review state', async ({ page }) => {
+    // Locate the first row status button
+    const statusBtn = page.locator('tbody tr').first().locator('button[aria-haspopup="true"]');
+    await expect(statusBtn).toBeVisible();
+
+    // Click to open floating popover menu
+    await statusBtn.click();
+    await expect(page.locator('text=Change Review State')).toBeVisible();
+
+    // Select Reviewed
+    await page.locator('button[role="menuitem"]:has-text("Reviewed")').click();
+
+    // Popover closes and row displays Reviewed
+    await expect(statusBtn).toHaveText(/Reviewed/);
+  });
 });

@@ -11,6 +11,7 @@ import {
   Clock
 } from 'lucide-react';
 import { ProcessedRecord, RouteCategory, ReviewState, CallPayload, MeetingPayload } from '../types/index.js';
+import { ReviewStateDropdown } from './ReviewStateDropdown.js';
 
 interface TriageInboxProps {
   records: ProcessedRecord[];
@@ -46,22 +47,22 @@ export const TriageInbox: React.FC<TriageInboxProps> = ({
   }
 
   return (
-    <div className="glass-card rounded-2xl overflow-hidden shadow-xl">
+    <div className="glass-card rounded-2xl shadow-xl">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-white/[0.08] bg-dark-900/40 text-[11px] font-semibold uppercase tracking-wider text-dark-400">
-              <th className="py-3 px-4">Ref</th>
-              <th className="py-3 px-4">Channel</th>
-              <th className="py-3 px-4">Account / Conversation</th>
-              <th className="py-3 px-4">Team Member</th>
-              <th className="py-3 px-4">Destination</th>
-              <th className="py-3 px-4">Speech</th>
-              <th className="py-3 px-4 text-right">Status</th>
+            <tr className="border-b border-white/[0.08] bg-dark-900/60 text-[11px] font-semibold uppercase tracking-wider text-dark-400">
+              <th className="py-3.5 px-4">Ref</th>
+              <th className="py-3.5 px-4">Channel</th>
+              <th className="py-3.5 px-4">Account / Conversation</th>
+              <th className="py-3.5 px-4">Team Member</th>
+              <th className="py-3.5 px-4">Destination</th>
+              <th className="py-3.5 px-4">Speech</th>
+              <th className="py-3.5 px-4 text-right">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.05] text-xs">
-            {records.map((record) => {
+            {records.map((record, index) => {
               const isSelected = selectedRecordId === record.identity;
               const isCall = record.source_type === 'call';
               const p = record.payload as any;
@@ -73,6 +74,7 @@ export const TriageInbox: React.FC<TriageInboxProps> = ({
                 : (p.organizer_email || 'Unassigned');
 
               const isMismatchedRep = isCall && record.record_ref === 'C06';
+              const isLastFewRows = index >= records.length - 3;
 
               return (
                 <tr
@@ -139,7 +141,7 @@ export const TriageInbox: React.FC<TriageInboxProps> = ({
                       {/* Manual Override Tag */}
                       {record.is_manually_corrected && (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] bg-sky-500/10 text-sky-300 border border-sky-500/25 font-medium">
-                          <CheckCircle2 className="w-3 h-3 text-sky-400 shrink-0" />
+                          <CheckCircle2 className="w-3 h-3 text-sky-400" />
                           <span>Manual Override</span>
                         </span>
                       )}
@@ -194,23 +196,13 @@ export const TriageInbox: React.FC<TriageInboxProps> = ({
                     )}
                   </td>
 
-                  {/* Status Dropdown */}
-                  <td className="py-3.5 px-4 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
-                    <select
+                  {/* Status Custom Dropdown */}
+                  <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                    <ReviewStateDropdown
                       value={record.review_state}
-                      onChange={(e) => onUpdateReviewState(record, e.target.value as ReviewState)}
-                      className={`text-xs font-medium rounded-lg px-2.5 py-1 border focus:outline-none transition ${
-                        record.review_state === 'reviewed'
-                          ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-                          : record.review_state === 'pending_re-review'
-                          ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
-                          : 'bg-dark-850 text-dark-300 border-white/[0.08]'
-                      }`}
-                    >
-                      <option value="unreviewed">Pending</option>
-                      <option value="reviewed">Reviewed</option>
-                      <option value="pending_re-review">Needs Re-review</option>
-                    </select>
+                      onChange={(newState) => onUpdateReviewState(record, newState)}
+                      isLastFewRows={isLastFewRows}
+                    />
                   </td>
                 </tr>
               );

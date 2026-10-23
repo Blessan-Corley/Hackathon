@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, X, Users, PhoneCall, Calendar, Filter, Sparkles } from 'lucide-react';
+import { Search, X, Users, PhoneCall, Calendar, Filter, Sparkles, ChevronDown } from 'lucide-react';
 import { DashboardMetrics } from '../types/index.js';
 
 interface FilterToolbarProps {
@@ -106,14 +106,14 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
       </div>
 
       {/* Filter Selectors */}
-      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/[0.05] text-xs">
+      <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-white/[0.05] text-xs">
         
         {/* Person Selector */}
-        <div className="flex items-center gap-1.5">
+        <div className="relative">
           <select
             value={selectedPerson}
             onChange={(e) => onSelectPerson(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg bg-dark-900 border border-white/[0.08] text-dark-200 text-xs focus:outline-none focus:border-emerald-500/50"
+            className="appearance-none bg-dark-900 hover:bg-dark-850 border border-white/[0.08] hover:border-white/[0.14] text-dark-200 text-xs font-medium rounded-xl pl-3 pr-8 py-1.5 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition cursor-pointer shadow-sm"
           >
             <option value="all">All Team Members</option>
             <optgroup label="── CALL REPS ──">
@@ -131,14 +131,15 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
               ))}
             </optgroup>
           </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-dark-400" />
         </div>
 
         {/* Route Taxonomy */}
-        <div className="flex items-center gap-1.5">
+        <div className="relative">
           <select
             value={selectedRoute}
             onChange={(e) => onSelectRoute(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg bg-dark-900 border border-white/[0.08] text-dark-200 text-xs focus:outline-none focus:border-emerald-500/50"
+            className="appearance-none bg-dark-900 hover:bg-dark-850 border border-white/[0.08] hover:border-white/[0.14] text-dark-200 text-xs font-medium rounded-xl pl-3 pr-8 py-1.5 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition cursor-pointer shadow-sm"
           >
             <option value="all">All Destination Routes</option>
             <option value="deal_next_steps">Deal Next Steps ({metrics.route_distribution.deal_next_steps})</option>
@@ -149,33 +150,36 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
             <option value="internal_ops">Internal / Ops ({metrics.route_distribution.internal_ops})</option>
             <option value="intake_exception">Intake Exceptions ({metrics.route_distribution.intake_exception})</option>
           </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-dark-400" />
         </div>
 
         {/* Review Status */}
-        <div className="flex items-center gap-1.5">
+        <div className="relative">
           <select
             value={selectedReviewState}
             onChange={(e) => onSelectReviewState(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg bg-dark-900 border border-white/[0.08] text-dark-200 text-xs focus:outline-none focus:border-emerald-500/50"
+            className="appearance-none bg-dark-900 hover:bg-dark-850 border border-white/[0.08] hover:border-white/[0.14] text-dark-200 text-xs font-medium rounded-xl pl-3 pr-8 py-1.5 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition cursor-pointer shadow-sm"
           >
             <option value="all">All Review States</option>
             <option value="unreviewed">Pending Review ({metrics.review_counts.unreviewed})</option>
             <option value="reviewed">Reviewed ({metrics.review_counts.reviewed})</option>
             <option value="pending_re-review">Needs Re-review ({metrics.review_counts.pending_re_review})</option>
           </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-dark-400" />
         </div>
 
         {/* Speech Coverage */}
-        <div className="flex items-center gap-1.5">
+        <div className="relative">
           <select
             value={selectedTranscriptFilter}
             onChange={(e) => onSelectTranscriptFilter(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg bg-dark-900 border border-white/[0.08] text-dark-200 text-xs focus:outline-none focus:border-emerald-500/50"
+            className="appearance-none bg-dark-900 hover:bg-dark-850 border border-white/[0.08] hover:border-white/[0.14] text-dark-200 text-xs font-medium rounded-xl pl-3 pr-8 py-1.5 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition cursor-pointer shadow-sm"
           >
             <option value="all">All Content</option>
             <option value="true">Verified Speech ({metrics.usable_transcript_count})</option>
             <option value="false">Silent / Telephony ({metrics.usable_transcript_denominator - metrics.usable_transcript_count})</option>
           </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-dark-400" />
         </div>
 
         {/* Reset Filter Button */}
