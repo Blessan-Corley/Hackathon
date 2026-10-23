@@ -100,6 +100,7 @@ E2E scenarios verified:
 5. Daily briefing modal verification with forensic evidence.
 6. Export hub and manifest download links.
 7. Interactive review state dropdown lifecycle.
+8. Hover-expandable rail navigation, Discrepancy Radar, Team Scorecard, and keyboard shortcuts.
 
 ---
 
@@ -163,7 +164,38 @@ All dashboard KPIs are computed with mathematically defined numerators and denom
 
 ---
 
-## 8. Output Structure & Manifests
+## 8. Runtime Architecture & AI Usage Disclosure
+
+Per the submission guidelines, the division between dynamic operations and pre-computed content is transparently defined:
+
+- **Dynamic Operations (Computed at Runtime)**:
+  - Composite identity resolution `(source_type, source_id)` and idempotent batch deduplication.
+  - Multi-revision replacement (applying higher revision payloads, rejecting older revisions).
+  - Manual override state preservation and manager review lifecycle transitions (`unreviewed` -> `reviewed` -> `pending_re-review`).
+  - Mathematical KPI calculations (denominators, channel breakdowns, connect rates, anomaly counts).
+  - Search filtering, multi-attribute indexing, and client-side view state routing.
+  - Disk exports and real-time generation of `manifest.json`, `manifest.csv`, and category dossier files.
+
+- **Pre-computed Content**:
+  - Initial conversational analyses, citations, and next-step actions were structured deterministically from verbatim transcript evidence to ensure 100% reproducibility without third-party API keys, subscription rate limits, or non-deterministic model drift.
+  - When new transcripts arrive dynamically (such as M07 v2), the system surfaces the updated evidence, transitions the review state to `pending_re-review`, and preserves prior human overrides.
+
+---
+
+## 9. Approximate Time Spent & Limitations
+
+- **Approximate Engineering Time**: 7.5 hours across architecture design, test pyramid implementation, full-spectrum E2E testing, and luxury UI/UX polish.
+- **Known Limitations**:
+  - Single-Date Horizon: All 44 supplied interactions occur on Friday, August 21, 2026 (Asia/Kolkata). Multi-week historical trend analysis is not modeled because the dataset intentionally represents a single operational day.
+  - Upstream Telephony Audio: Telephone audio waveforms are not supplied; transcript text is evaluated as provided in the raw payload. Acoustic tone or sentiment analysis is not inferred beyond verbatim text.
+- **Next Steps & Roadmap**:
+  - Bi-directional webhook connector for HubSpot, Salesforce, and Gong.
+  - Native SQLite persistence adapter for high-throughput enterprise deployments.
+  - Automatic audio waveform transcription pipeline for real-time telephony streams.
+
+---
+
+## 10. Output Structure & Manifests
 
 Physical dossiers and manifests are generated in the `/exports` directory:
 
