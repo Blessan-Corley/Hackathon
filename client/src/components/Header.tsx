@@ -8,7 +8,8 @@ import {
   Calendar, 
   MapPin, 
   BellRing,
-  ArrowUpRight
+  ArrowUpRight,
+  PanelLeft
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -17,6 +18,8 @@ interface HeaderProps {
   onOpenSyncDrawer: () => void;
   isSyncOpen: boolean;
   discrepanciesCount: number;
+  onToggleSidebar?: () => void;
+  isSidebarCollapsed?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -24,7 +27,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExport,
   onOpenSyncDrawer,
   isSyncOpen,
-  discrepanciesCount
+  discrepanciesCount,
+  onToggleSidebar,
+  isSidebarCollapsed
 }) => {
   return (
     <header className="border-b border-white/[0.08] bg-dark-900/80 backdrop-blur-md sticky top-0 z-30 px-6 py-3.5 transition-all">
@@ -32,6 +37,17 @@ export const Header: React.FC<HeaderProps> = ({
         
         {/* Brand & Context */}
         <div className="flex items-center gap-3.5">
+          {onToggleSidebar && (
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              className="p-2 rounded-xl bg-dark-850 hover:bg-dark-800 border border-white/[0.08] text-dark-400 hover:text-white transition"
+              title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              <PanelLeft className="w-4 h-4" />
+            </button>
+          )}
+
           <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 p-[1px] shadow-lg shadow-emerald-500/10">
             <div className="h-full w-full bg-dark-950 rounded-[11px] flex items-center justify-center">
               <span className="text-emerald-400 font-bold text-sm tracking-tighter">SN</span>

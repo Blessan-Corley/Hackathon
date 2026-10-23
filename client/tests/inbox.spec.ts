@@ -90,4 +90,42 @@ test.describe('Tier 3 E2E Browser Test: Revenue Intelligence Inbox', () => {
     // Popover closes and row displays Reviewed
     await expect(statusBtn).toHaveText(/Reviewed/);
   });
+
+  test('E2E 8: Navigates Hover-Expandable Sidebar, Discrepancy Radar, and Team Scorecard views', async ({ page }) => {
+    // 1. Hover over the sidebar rail to expand it
+    const aside = page.locator('aside');
+    await aside.hover();
+    await expect(page.locator('button[title*="Discrepancy Radar"]')).toBeVisible();
+
+    // 2. Switch to Discrepancy Radar
+    await page.locator('button[title*="Discrepancy Radar"]').click();
+    await expect(page.locator('text=Discrepancy Radar & Telemetry Audits')).toBeVisible();
+    await expect(page.locator('text=Connection False Negative')).toBeVisible();
+    await expect(page.locator('text=Voice Attribution Mismatch')).toBeVisible();
+
+    // 3. Inspect Anomaly C06 from the radar
+    await page.click('button:has-text("Inspect Record C06")');
+    await expect(page.locator('text=Analysis & Intelligence')).toBeVisible();
+    await expect(page.locator('text=Meera').first()).toBeVisible();
+    await page.locator('button:has(svg.lucide-x)').first().click();
+
+    // 4. Hover aside and switch to Team Scorecard
+    await aside.hover();
+    await page.locator('button[title*="Team Scorecard"]').click();
+    await expect(page.locator('text=Team Activity & Coaching Scorecard')).toBeVisible();
+    await expect(page.locator('text=Outbound Call Representatives')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Arun' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Meera' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Kiran' })).toBeVisible();
+
+    // 5. Click View on Kiran to filter inbox by Kiran
+    await page.locator('button[title="View Kiran\'s activities"]').click();
+
+    // Switched back to inbox filtered by Kiran (exactly 1 call: C03)
+    await expect(page.locator('tbody tr')).toHaveCount(1);
+
+    // 6. Test shortcut key '/' to focus search input
+    await page.keyboard.press('/');
+    await expect(page.locator('#global-search-input')).toBeFocused();
+  });
 });

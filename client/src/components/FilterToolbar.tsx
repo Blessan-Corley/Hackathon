@@ -182,20 +182,29 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
         <div className="relative flex-1 min-w-[260px]">
           <Search className="w-4 h-4 text-dark-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
+            id="global-search-input"
             type="text"
             placeholder="Search conversations, accounts, or citations..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-9 py-2 rounded-xl bg-dark-900 border border-white/[0.08] text-xs text-white placeholder-dark-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition"
+            className="w-full pl-10 pr-12 py-2 rounded-xl bg-dark-900 border border-white/[0.08] text-xs text-white placeholder-dark-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition"
           />
-          {searchQuery && (
-            <button 
-              onClick={() => onSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-300"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {searchQuery ? (
+              <button 
+                type="button"
+                onClick={() => onSearchChange('')}
+                className="text-dark-500 hover:text-dark-300 p-0.5"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-dark-500 bg-dark-850 border border-white/[0.08] rounded pointer-events-none">
+                /
+              </kbd>
+            )}
+          </div>
         </div>
 
         {/* Source Channel Segmented Control */}
