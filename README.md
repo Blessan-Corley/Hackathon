@@ -1,153 +1,196 @@
 # SpendNest Revenue Intelligence Inbox
 
-A revenue intelligence triage workspace and idempotent decision engine built to help sales managers review calls and meetings, catch dirty telemetry, resolve multi-purpose routing, and preserve human overrides across asynchronous data deliveries.
+A revenue intelligence triage workspace and idempotent data contract engine designed for frontline sales managers. The platform reconciles CRM activity telemetry across phone calls and meetings, surfaces upstream data discrepancies, preserves human overrides through asynchronous batch updates, and routes conversational intelligence to downstream departments.
 
 ---
 
-## 1. Quick Start & Execution
+## 1. System Architecture
 
-### Prerequisites
-- Node.js (v18+ or v22+)
-- npm (v9+)
+The project is structured as a monorepo containing a TypeScript backend engine and a modern React frontend:
 
-### Installation & Run
-To run the complete application (both API backend and Vite client served simultaneously):
+- **Backend (`server/`)**: Built with Node.js, Express, and TypeScript. Implements composite identity indexing, idempotent upserting, revision tracking, mathematical metric calculations, multi-destination Markdown dossier generation, and a verification audit engine.
+- **Frontend (`client/`)**: Built with React 19, TypeScript, Vite, and Tailwind CSS. Provides a triage inbox, metric dashboards, filter toolbar with custom semantic color indicators, an evidence inspector drawer with turn-by-turn citations, and an interactive data replay drawer.
+- **Data Source (`candidate/`)**: Contains original CRM call and meeting payloads (`01_initial.json` and `02_update.json`).
+- **Exports (`exports/`)**: Multi-destination dossier folders, `manifest.json`, and RFC 4180 compliant `manifest.csv`.
+
+---
+
+## 2. Quick Start
+
+### Option A: Local Node.js Execution
+
+**Prerequisites**: Node.js v18+ (tested on v22) and npm v9+.
 
 ```bash
-# 1. Install dependencies for server and client
-npm --prefix server install
-npm --prefix client install
+# 1. Install dependencies for all packages
+npm install
 
-# 2. Build production artifacts
+# 2. Build both client and server production bundles
 npm run build
 
 # 3. Start the unified production server
 npm start
 ```
 
-The application opens at **`http://localhost:4000`**.
+The application is accessible at `http://localhost:4000`.
 
-> **Note on Deployed URL:** If reviewing via the hosted deployment, open the provided deployment link directly in any modern browser. Access is enabled without requiring sign-in or authorization.
+### Option B: Docker Container
 
-### Interface & Design System Preview
-The UI is styled with Plus Jakarta Sans typography, high-contrast badges, optical hierarchy, and glassmorphic cards:
-- **Triage Inbox:** `docs/screenshots/01_dashboard_main.png`
-- **Sync & Replay Pipeline:** `docs/screenshots/02_sync_pipeline.png`
-- **Evidence Inspector & Citations:** `docs/screenshots/03_evidence_inspector.png`
-- **Executive Daily Briefing:** `docs/screenshots/04_daily_briefing.png`
+**Prerequisites**: Docker and Docker Compose installed.
+
+```bash
+# Build and run containerized application
+docker compose up --build
+
+# Run in background (detached mode)
+docker compose up -d --build
+
+# Stop the container
+docker compose down
+```
+
+The service runs on `http://localhost:4000`. Exported dossiers are mapped to `./exports` on the host machine.
 
 ---
 
-## 2. Test Pyramid & Terminal Verification
+## 3. Development Scripts
 
-This project adheres to a **Mandatory Full-Spectrum Testing Culture (Zero Untested Code Policy)** across all 3 tiers:
+```bash
+# Run backend development server with hot-reload
+npm run dev:server
 
-### Tier 1 & Tier 2: Unit & Integration Test Suite (Vitest)
-Executes all ingestion contract rules, idempotency assertions, metric calculations, and REST replay lifecycles:
+# Run frontend development server with Vite HMR
+npm run dev:client
+```
+
+---
+
+## 4. Test Verification Suite
+
+The repository implements a 3-tier testing pyramid covering contract invariants, calculations, REST lifecycles, and browser interactions.
+
+### Tier 1 & Tier 2: Vitest Unit and Integration Tests
+
+Executes all ingestion rules, revision replacement, denominator assertions, and REST endpoints:
 
 ```bash
 npm test
 ```
-*Output: 15 passed across 4 test suites (Ingestion, Metrics, Export, Replay REST).*
 
-### Tier 3: End-to-End Browser Test Suite (Playwright)
-Executes real browser workflows, DOM interactions, inspector drawers, and 1-click evaluation steppers:
+Test coverage includes:
+- Idempotent upsert logic: deduplication over repeated imports.
+- Revision retention: verification that Revision 2 is retained when Revision 1 is re-ingested.
+- Override preservation: user route edits survive upstream payload refreshes.
+- Metric calculations: verifying explicit denominators and activity distributions.
+- Multi-destination export generation and manifest emission.
+
+### Tier 3: Playwright End-to-End Browser Tests
+
+Executes automated Chromium tests against real DOM interactions:
 
 ```bash
 npm run test:e2e
 ```
-*Output: 6 passed (All UI workflows, filter state, and contract checks verified).*
+
+E2E scenarios verified:
+1. Dashboard state and KPI card rendering for 44 total records.
+2. Multi-channel and team member filtering with custom dropdowns.
+3. Slide-over Evidence Inspector opening with verified turn citations.
+4. Execution of the 5-step data contract replay sequence.
+5. Daily briefing modal verification with forensic evidence.
+6. Export hub and manifest download links.
+7. Interactive review state dropdown lifecycle.
 
 ---
 
-## 3. How to Reproduce the 5 Replay Checks
+## 5. Data Contract & Replay Verification
 
-The application includes an **interactive Replay Stepper** directly in the UI header. You can execute each step manually or click **"Run 5-Step Evaluation Suite"** to verify the entire contract automatically in 1 second.
+The platform satisfies five core ingestion and idempotency guarantees:
 
-| Step | Action in UI or API | Expected & Verified Behaviour |
+| Step | Action | Contract Guarantee |
 | :--- | :--- | :--- |
-| **1. Initial Import** | Click **"1. Initial"** (`POST /api/replay/initial`) | Ingests `01_initial.json`. Exactly 44 records loaded. 17 usable transcripts. M07 staged in intake with 0 turns. |
-| **2. Repeat Import** | Click **"2. Re-import (Shuffled)"** (`POST /api/replay/repeat-initial`) | Re-ingests initial batch with array order randomized. **0 duplicates added**; total count remains 44. |
-| **3. Manual Correction** | Click **"3. Override M07"** or change route in drawer (`PATCH /api/records/meeting/:id/route`) | Overrides M07 route to `Customer Support`. Stored as `is_manually_corrected: true` with manager justification. |
-| **4. Update Batch** | Click **"4. Update (Rev 2)"** (`POST /api/replay/update`) | Ingests `02_update.json`. M07 updated to Revision 2 with 27 turns. Total records stays 44. **Manual override to Customer Support is preserved**. |
-| **5. No Downgrade** | Click **"5. Test No-Downgrade"** (`POST /api/replay/repeat-initial`) | Ingests Revision 1 again. The engine ignores older revision; M07 remains Revision 2. |
+| **1. Initial Import** | Ingest `01_initial.json` (`POST /api/replay/initial`) | Exactly 44 records loaded (30 calls, 14 meetings). 17 usable transcripts. M07 staged with 0 turns. |
+| **2. Repeat Import** | Ingest shuffled initial batch (`POST /api/replay/repeat-initial`) | Composite identity `(source_type, source_id)` deduplication ensures 0 duplicate records. Total remains 44. |
+| **3. Manual Correction** | Reassign M07 route (`PATCH /api/records/meeting/:id/route`) | Overrides M07 route to Customer Support with audit timestamp and manager justification note. |
+| **4. Ingest Update** | Ingest `02_update.json` (`POST /api/replay/update`) | M07 updated to Revision 2 with 27 dialogue turns. Total records remains 44. Manual route override to Customer Support is strictly preserved. |
+| **5. Test No-Downgrade** | Re-ingest `01_initial.json` (`POST /api/replay/repeat-initial`) | Incoming Revision 1 payload is rejected because Revision 2 is already active. M07 text and turns are retained. |
+
+These steps can be executed individually from the UI via the **Sync & Replay Feeds** drawer, or verified automatically by clicking **Run 5-Step Evaluation Suite**.
 
 ---
 
-## 4. Where Generated Exports & Manifests are Located
+## 6. Metric Definitions & Denominators
 
-When exports are generated (via `POST /api/export/generate` or clicking **"Export Hub"** in the app):
+All dashboard KPIs are computed with mathematically defined numerators and denominators:
 
-- **Physical Output Folder:** `/exports` in the project root.
-- **Machine-Readable Manifests:**
-  - `/exports/manifest.json` (Structured JSON)
-  - `/exports/manifest.csv` (RFC 4180 CSV with escaped fields)
-- **Shared Manager Brief:** `/exports/daily_briefs/2026-08-21_Asia_Kolkata_Manager_Daily_Brief.md`
-- **Dossiers by Destination:**
-  - `/exports/deal_next_steps/` (e.g., `M03_Asterloom`, `C03_Milan`)
-  - `/exports/sales_coaching/` (e.g., `C01_Arun`, `C06_Ravi`, `M03_Asterloom`)
-  - `/exports/customer_success/` (e.g., `M04_Cedarwave`)
-  - `/exports/customer_support/` (e.g., `M07_Willowfield`, `M09_Brookmint`)
-  - `/exports/partnerships/` (e.g., `M01_Harborpath`, `C07_Willowbank`)
-  - `/exports/internal_ops/` (e.g., `M10_BillingTraining`, `M02_LedgerBridge`)
-  - `/exports/intake_exceptions/` (`M05`, `M08`, `M11`, `M12`, `M13`, `M14`, and background calls)
-
-> **Multi-Destination Context:** When a conversation serves multiple goals (such as `M03` requiring both deal acceleration and pricing objection coaching), independent markdown dossiers are written to both destination directories without loss of history.
+- **Total Records (44)**: Total unique `(source_type, source_id)` entities in the dataset (30 calls, 14 meetings).
+- **Transcript Coverage (40.9% post-update)**: Numerator = 18 records with verified conversational text (10 calls, 8 meetings). Denominator = 44 total records.
+- **Call Coverage (33.3%)**: Numerator = 10 calls with transcript text. Denominator = 30 total calls.
+- **Meeting Coverage (57.1% post-update)**: Numerator = 8 meetings with turns. Denominator = 14 total meetings.
+- **Source Telephony Connect Rate (36.7%)**: Numerator = 11 calls flagged `is_connected: true`. Denominator = 30 calls evaluated.
+  *Note:* Upstream telephony flags exhibit telemetry discrepancies: calls B11 and B14 report `is_connected: true` despite zero prospect response, while call C04 reports `is_connected: false` despite rep Arun speaking for 95 seconds.
 
 ---
 
-## 5. Metric Definitions & Explicit Denominators
+## 7. Key Findings & Intentional Decisions
 
-| Headline Number | Exact Formula | Numerator | Explicit Denominator | Value |
-| :--- | :--- | :--- | :--- | :--- |
-| **Total Records** | Distinct `(source_type, source_id)` tuples | 44 | N/A | **44** |
-| **Transcript Coverage** | Records with non-empty text / Total Records | 17 (init) &rarr; 18 (update) | 44 Total Extract Records | **38.6% &rarr; 40.9%** |
-| **Call Coverage** | Calls with `payload.transcript` / Total Calls | 10 calls | 30 Total Calls | **33.3%** |
-| **Meeting Coverage** | Meetings with turns / Total Meetings | 7 (init) &rarr; 8 (update) | 14 Total Meetings | **50.0% &rarr; 57.1%** |
-| **Source Connect Rate** | Calls with `is_connected === true` / Calls with non-null `is_connected` | 11 calls | 30 Calls Evaluated | **36.7%** |
+### Telemetry Findings
 
-*Note on Telephony Discrepancies:* The Source Connect Rate measures upstream telephony flags only. Calls `B11` and `B14` report `is_connected: true` but are unresponsive (0 text), while Call `C04` reports `is_connected: false` despite rep Arun speaking a 95-second screening and voicemail script.
+1. **Phantom Follow-up on Departed Contact (Call C10)**:
+   - Upstream CRM metadata tagged `observed_outcome: follow_up`.
+   - Spoken dialogue proves contact Aniket explicitly left Meadowbrick and declined follow-up (*"I don't work there anymore... No. I said I will contact you if there is anything to discuss"*).
+   - The engine flags an Outcome Discrepancy, prevents automated outreach, and prompts account re-qualification.
 
----
+2. **Customer Defect Escalation (Meeting M07)**:
+   - Received in update delivery Revision 2 with 27 conversational turns.
+   - Screen-share reveals an event-payment description persistence bug.
+   - The engine updates transcript contents while preserving prior manual routing to Customer Support and Engineering SLA queues.
 
-## 6. The Three Most Important Findings
+3. **Rep Telephony Attribution Mismatch (Call C06)**:
+   - CRM recorded representative name as Meera.
+   - Spoken voice is Ravi (*"Good evening. Ravi here. I'll say at the start that this is a cold call"*).
+   - The engine flags an Attribution Conflict chip to prevent misallocated sales coaching.
 
-1. **Phantom Follow-up on Departed Contact (Call C10)**
-   - *Source Reference:* Call C10 (`b747f592-810e-583c-9b81-8db5ab035806`), Quote:
-     > *"Are you calling about Meadowbrick? Yes, that's right. I don't work there anymore... Would a follow-up call on Monday or Tuesday next week be okay... ? No. I said I will contact you if there is anything to discuss."*
-   - *Product Impact:* Upstream metadata marked `observed_outcome: follow_up`. Our engine flags a high-priority **Discrepancy Alert**, classifies the contact as departed, and cancels scheduled outreach.
-2. **Customer Defect Escalation: Payment Description Persistence (Meeting M07)**
-   - *Source Reference:* Meeting M07 (`4f304fff-fd40-5cfc-a366-0a134c445c2a`), Turn 2:
-     > Customer A shares screen showing that editing payment description does not persist upon saving.
-   - *Product Impact:* Arriving in update delivery Revision 2, the engine replaces source text, preserves any existing manual manager override, and flags the ticket for Engineering support escalation.
-3. **Rep Attribution Mismatch in Telephony Metadata (Call C06)**
-   - *Source Reference:* Call C06 (`12216d5c-e254-52c6-b344-47de4c6e1ae5`), Quote:
-     > *"Good evening. Ravi here. I'll say at the start that this is a cold call."*
-   - *Product Impact:* Upstream CRM claims caller is Meera, but spoken caller is Ravi. System flags a **Caller Attribution Mismatch** to prevent misdirected coaching.
+4. **Internal and Vendor Separation**:
+   - Meeting M10 is an internal staff training session on subscription billing.
+   - Meeting M02 is a vendor pitch from LedgerBridge for e-invoicing API integration.
+   - Both are routed to Internal Operations and excluded from sales pipeline quotas.
 
----
+### Deliberately Rejected Decision
 
-## 7. The One Deliberately Rejected Decision
-
-- **Rejected:** Automated Deal Value Sizing ($ ARR) & Win Probability Scoring.
-- **Why Rejected:** The dataset contains zero CRM deal stages, company financial records, or contract terms. Inventing currency amounts or win probability percentages from conversational banter creates false managerial confidence and violates data contract integrity.
-- **Accepted Trade-off:** Restricting deal intelligence to verifiable qualitative signals: stated next steps, named owners (e.g. Asterloom M03 Turn 36), and competitor identification (StoreHarbor C05).
+- **Automated Deal Sizing ($ ARR) and Win Probability**:
+  The decision to generate artificial currency amounts or probability percentages was considered and rejected. The dataset provides zero historical CRM revenue stages, average selling prices, or contract histories. Inventing financial figures from cold call dialogue compromises data integrity. The application instead captures verifiable qualitative signals: stated next steps, named decision-makers, and competitor evaluations.
 
 ---
 
-## 8. AI Usage & Implementation Choices
+## 8. Output Structure & Manifests
 
-- **Deterministic Ingestion & Idempotency:** The upsert engine, revision controller, manifest generator, and metric calculations run 100% deterministically.
-- **Pre-generated Intelligence Cache:** Analysis dossiers for all 18 conversations and 26 telemetry records are pre-computed with exact turn and quote citations, ensuring immediate offline execution without requiring paid API keys or credentials.
-- **Runtime Computations:** Dynamic filtering, manual route overrides, review state transitions, audit logging, and ZIP streaming execute dynamically in Node.js.
+Physical dossiers and manifests are generated in the `/exports` directory:
 
----
+```
+exports/
+├── daily_briefs/
+│   └── 2026-08-21_Asia_Kolkata_Manager_Daily_Brief.md
+├── customer_success/
+│   └── M04_Cedarwave_Distribution__SpendNest_d.md
+├── customer_support/
+│   └── M07_Willowfield_Trust__SpendNest_discus.md
+├── deal_next_steps/
+│   ├── C03_Kiran_20d509ba.md
+│   └── M03_Asterloom_Systems__SpendNest_discus.md
+├── intake_exceptions/
+├── internal_ops/
+│   ├── M02_LedgerBridge__SpendNest_discussion.md
+│   └── M10_Billing_workflow_walkthrough.md
+├── partnerships/
+│   ├── C07_Dev_428817fa.md
+│   └── M01_Harborpath_Advisory__SpendNest_disc.md
+├── sales_coaching/
+│   ├── C01_Arun_2ec4404c.md
+│   └── C06_Meera_12216d5c.md
+├── manifest.csv
+└── manifest.json
+```
 
-## 9. Submission Deliverables Summary
-
-- **Working Application:** `http://localhost:4000` (Unified production build).
-- **Five Slides:** Documented in [`docs/FIVE_SLIDES.md`](file:///F:/My%20Projects/Assesment/docs/FIVE_SLIDES.md).
-- **Three-Minute Screen Recording Script:** Documented in [`docs/NARRATED_SCREEN_RECORDING_SCRIPT.md`](file:///F:/My%20Projects/Assesment/docs/NARRATED_SCREEN_RECORDING_SCRIPT.md).
-- **Export Tree & Manifests:** Located in [`exports/`](file:///F:/My%20Projects/Assesment/exports/).
-- **Approximate Time Spent:** 7.5 hours.
-- **Known Limitations & Future Work:** Local meeting speaker tags (`Team member A`, `Customer A`) are scoped per meeting; future enhancements would join cross-meeting attendees via verified corporate email domains.
+- When an interaction serves multiple business functions (e.g. M03 involves both Deal Next Steps and Sales Coaching), distinct dossiers are written to both respective destination folders.
+- All file paths inside `manifest.json` and `manifest.csv` are relative to the export root directory.

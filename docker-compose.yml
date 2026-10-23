@@ -1,0 +1,14 @@
+services:
+  revenue-intelligence:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spendnest-revenue-intelligence
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+    restart: unless-stopped
+    volumes:
+      - ./exports:/app/exports
