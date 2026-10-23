@@ -100,7 +100,9 @@ export class IngestionEngine {
 
     // Get suggested routes and analysis for this record
     const dossierEntry = DOSSIERS[raw.record_ref];
-    const suggestedRoutes: RouteCategory[] = dossierEntry ? dossierEntry.routes : (hasUsableText ? (['deal_next_steps'] as RouteCategory[]) : (['intake_exception'] as RouteCategory[]));
+    const suggestedRoutes: RouteCategory[] = dossierEntry 
+      ? (typeof dossierEntry.routes === 'function' ? dossierEntry.routes(revision) : dossierEntry.routes) 
+      : (hasUsableText ? (['deal_next_steps'] as RouteCategory[]) : (['intake_exception'] as RouteCategory[]));
     const analysis = dossierEntry 
       ? dossierEntry.analysis(revision) 
       : getFallbackAnalysis(raw.record_ref, raw.source_type, raw.payload, raw.transcript_payload);

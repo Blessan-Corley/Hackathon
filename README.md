@@ -129,7 +129,7 @@ All dashboard KPIs are computed with mathematically defined numerators and denom
 - **Call Coverage (33.3%)**: Numerator = 10 calls with transcript text. Denominator = 30 total calls.
 - **Meeting Coverage (57.1% post-update)**: Numerator = 8 meetings with turns. Denominator = 14 total meetings.
 - **Source Telephony Connect Rate (36.7%)**: Numerator = 11 calls flagged `is_connected: true`. Denominator = 30 calls evaluated.
-  *Note:* Upstream telephony flags exhibit telemetry discrepancies: calls B11 and B14 report `is_connected: true` despite zero prospect response, while call C04 reports `is_connected: false` despite rep Arun speaking for 95 seconds.
+  *Note:* Upstream telephony telemetry reflects carrier signaling: calls B11 and B14 report `is_connected: true` despite being dropped 0s-9s dials, while call C04 reports `is_connected: false` with 95s IVR duration because Arun recorded a voicemail through screening rather than reaching a live prospect (standard telephony protocol).
 
 ---
 
@@ -159,35 +159,44 @@ All dashboard KPIs are computed with mathematically defined numerators and denom
 
 ### Deliberately Rejected Decision
 
-- **Automated Deal Sizing ($ ARR) and Win Probability**:
-  The decision to generate artificial currency amounts or probability percentages was considered and rejected. The dataset provides zero historical CRM revenue stages, average selling prices, or contract histories. Inventing financial figures from cold call dialogue compromises data integrity. The application instead captures verifiable qualitative signals: stated next steps, named decision-makers, and competitor evaluations.
+- **Entity Merging of Matching Titles (Meeting M04 & M13 - Cedarwave Distribution)**:
+  We considered automatically collapsing M04 and M13 into a single unified account record because both share the exact calendar title *"Cedarwave Distribution / SpendNest discussion"*. However, we deliberately **rejected** heuristic entity merging for three reasons:
+  1. **Strict Contract Identity**: The data contract mandates that `(source_type, source_id)` is the sole immutable record identity. Merging on title strings violates the contract boundary.
+  2. **Different Telemetry & Stakeholders**: M04 was organized by `team09@example.com` (09:00 UTC) with 27 usable dialogue turns on corporate credit card migration. M13 was organized by `team06@example.com` (07:30 UTC) with recording status `organizer_only` (unattended). Collapsing them would silently erase the unattended meeting exception.
+  3. **Data Loss Trade-off**: Treating separate calendar invites as one record corrupts individual meeting audit trails. We chose to retain M13 in the `intake_exceptions` triage queue with honest uncertainty, while independently routing M04 to `customer_success` and `deal_next_steps`.
+
+- **Collapsing 20 Voicemail Drops (B01–B20) into a Single Row**:
+  We also considered grouping all background unreached calls into an aggregate summary card. We rejected this because a frontline manager needs to see individual dial durations (e.g. 7s vs 24s), rep attribution, and carrier response codes to audit rep calling patterns and data ops lead quality. Instead, we sorted the inbox so high-priority meetings (M01–M14) and evaluated conversations (C01–C10) appear first, while background screening drops sit at the bottom.
 
 ---
 
 ## 8. Runtime Architecture & AI Usage Disclosure
 
-Per the submission guidelines, the division between dynamic operations and pre-computed content is transparently defined:
+Per the submission brief (*"Pre-generated analysis is allowed. If you use it, make clear which content is pre-generated, what the application actually computes, and how new content is handled"*), the division of responsibilities is disclosed with total transparency:
 
-- **Dynamic Operations (Computed at Runtime)**:
-  - Composite identity resolution `(source_type, source_id)` and idempotent batch deduplication.
-  - Multi-revision replacement (applying higher revision payloads, rejecting older revisions).
-  - Manual override state preservation and manager review lifecycle transitions (`unreviewed` -> `reviewed` -> `pending_re-review`).
-  - Mathematical KPI calculations (denominators, channel breakdowns, connect rates, anomaly counts).
-  - Search filtering, multi-attribute indexing, and client-side view state routing.
-  - Disk exports and real-time generation of `manifest.json`, `manifest.csv`, and category dossier files.
+- **What Is Pre-generated (Curated Prior to Runtime)**:
+  - The substantive qualitative dossiers (headlines, synthesis, citations, honest uncertainties, and next steps) for the 18 active conversations were prepared with AI assistance from verbatim transcript texts and stored deterministically in `server/src/analysis/dossiers.ts` keyed by `record_ref`.
+  - This ensures 100% reproducible evaluations, zero invented claims or hallucinated quotes, and instantaneous offline execution without requiring third-party API keys or incurring LLM token latency.
+  - Every citation was verified directly against `CONVERSATIONS.md` turns and quotes.
 
-- **Pre-computed Content**:
-  - Initial conversational analyses, citations, and next-step actions were structured deterministically from verbatim transcript evidence to ensure 100% reproducibility without third-party API keys, subscription rate limits, or non-deterministic model drift.
-  - When new transcripts arrive dynamically (such as M07 v2), the system surfaces the updated evidence, transitions the review state to `pending_re-review`, and preserves prior human overrides.
+- **What the Application Actually Computes at Runtime**:
+  - **Identity Resolution & Deduplication**: Indexes records strictly by composite identity `(source_type, source_id)`, guaranteeing zero duplicate records regardless of import order.
+  - **Telemetry Computation**: Computes `has_usable_text`, `text_length_chars`, and `speaker_count_computed` from raw payload envelopes at ingestion time.
+  - **Filter-Reactive Metrics Engine**: Recalculates all KPI cards, coverage rates, and denominators dynamically for the active filter slice (e.g. filtering to Meetings recalculates metrics for the 14 meetings rather than displaying static global numbers).
+  - **Hourly Activity Distribution**: Dynamically buckets interaction timestamps into Asia/Kolkata working hours (09:00–23:00 IST), rendering a stacked calls vs meetings timeline.
+  - **Revision Ordering & State Machine**: Ingests higher revisions, rejects older/same revisions, updates suggested routes (e.g. M07 updates from `intake_exception` to `customer_support`), marks `analysis_freshness` as `stale_pending_re-review`, and preserves user manual route corrections.
+  - **Differentiated Multi-Destination Exports**: Formats distinct Markdown files tailored to each destination category (`sales_coaching`, `deal_next_steps`, `customer_support`, `customer_success`, `partnerships`, `internal_ops`, `intake_exception`) and emits machine-readable `manifest.json` and `manifest.csv`.
 
 ---
 
-## 9. Approximate Time Spent & Limitations
+## 9. Approximate Time Spent & Engineering Context
 
-- **Approximate Engineering Time**: 7.5 hours across architecture design, test pyramid implementation, full-spectrum E2E testing, and luxury UI/UX polish.
+- **Total Time Spent**: Approximately 7.5 hours total.
+  - *Phase 1 (Pre-commit / ~3.5 hours)*: In-depth reading of `ASSIGNMENT.md`, `DATA_CONTRACT.md`, and raw source data; manual fact-checking of conversation transcripts; contract architecture design; and formulating the routing taxonomy.
+  - *Phase 2 (Implementation / ~4 hours)*: Test-driven backend development (Vitest unit and integration suites), idempotent ingestion engine, React frontend with Tailwind and Lucide icons, Playwright E2E browser tests, and Docker containerization.
 - **Known Limitations**:
-  - Single-Date Horizon: All 44 supplied interactions occur on Friday, August 21, 2026 (Asia/Kolkata). Multi-week historical trend analysis is not modeled because the dataset intentionally represents a single operational day.
-  - Upstream Telephony Audio: Telephone audio waveforms are not supplied; transcript text is evaluated as provided in the raw payload. Acoustic tone or sentiment analysis is not inferred beyond verbatim text.
+  - Single-Date Horizon: All 44 interactions occur on Friday, August 21, 2026. Multi-week historical trend forecasting is not possible because the dataset represents a single operational day.
+  - Telephony Waveforms: Audio waveforms were not supplied; telephony duration and IVR behavior are evaluated from upstream headers and transcript text.
 - **Next Steps & Roadmap**:
   - Bi-directional webhook connector for HubSpot, Salesforce, and Gong.
   - Native SQLite persistence adapter for high-throughput enterprise deployments.

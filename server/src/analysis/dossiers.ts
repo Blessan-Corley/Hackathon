@@ -1,40 +1,40 @@
 import { ConversationAnalysis, RouteCategory } from '../domain/types.js';
 
 export const DOSSIERS: Record<string, {
-  routes: RouteCategory[];
+  routes: RouteCategory[] | ((revision: number) => RouteCategory[]);
   analysis: (revision: number) => ConversationAnalysis;
 }> = {
   // --- CALLS ---
   C01: {
     routes: ['sales_coaching'],
     analysis: () => ({
-      headline: 'Unprepared Cold Outreach - Immediate Rejection & Cutoff',
-      what_happened: 'Rep Arun contacted Pranav at Harborlight Advisory without articulating why SpendNest was relevant to outsourced finance firms. Pranav asked "Why are you calling?" and immediately terminated the conversation.',
-      why_it_matters: 'Arun pitched generic features instead of leading with a pain point relevant to advisory practices, resulting in a burned contact and zero discovery.',
+      headline: 'Cold Outreach Rejection - Prospect Cites Existing Automated Setup',
+      what_happened: 'Rep Arun contacted Pranav at Harborlight Advisory regarding finance automation. Pranav questioned the unsolicited outreach ("I didn\'t ask for this call, and I\'m not interested. This number is for my work, not for people to sell things to me") and stated Harborlight already has advanced automated processes in place.',
+      why_it_matters: 'Arun pitched general automation without qualifying whether the firm already had systems in place, meeting immediate resistance.',
       evidence_citations: [
         {
           id: 'c01-cite-1',
           type: 'quote',
           reference: 'Spoken Transcript',
-          quote: 'Why are you calling? We work with outsourced finance... I am not interested. Please remove our number.',
-          note: 'Prospect immediately identifies mismatched proposition and demands removal.'
+          quote: "I don't know how I ended up on your list. I didn't ask for this call, and I'm not interested. This number is for my work, not for people to sell things to me... Our processes are already very automated. We have a fairly advanced setup, so I don't think this is something we need.",
+          note: 'Prospect clarifies work number privacy and existing automated stack.'
         }
       ],
       what_evidence_does_not_establish: [
-        'Does not establish whether Harborlight Advisory has existing expense software.',
-        'Does not establish if Arun had prior contact with other partners.'
+        'Does not establish which specific automation tools Harborlight Advisory uses.',
+        'Does not establish whether Arun has contacted other partners at the firm.'
       ],
       next_steps: [
         {
-          action: 'Manager 1-on-1 coaching with Arun on value hooks for outsourced accounting firms.',
+          action: 'Sales coaching for Arun on qualifying prospect tech maturity before leading into generic automation pitches.',
           owner: 'Sales Manager',
           timing: 'Immediate',
           verifiable: true
         },
         {
-          action: 'Mark phone number as Do-Not-Call per prospect demand.',
+          action: 'Tag Harborlight Advisory contact record as Not Interested / Existing Automated Solution.',
           owner: 'Arun',
-          timing: 'EOD 2026-08-21',
+          timing: '2026-08-21 EOD',
           verifiable: true
         }
       ],
@@ -111,28 +111,21 @@ export const DOSSIERS: Record<string, {
   C04: {
     routes: ['deal_next_steps', 'sales_coaching'],
     analysis: () => ({
-      headline: 'Voicemail Left After Email Bounce - Upstream Telemetry Mismatch',
-      what_happened: 'Arun navigated an automated screening gatekeeper and left a 95-second detailed voicemail for Ritesh at Lanternpath Media regarding corrected email collateral.',
-      why_it_matters: 'Upstream metadata marked this call as `is_connected: false`, but Arun successfully passed gatekeeper screening and left a structured re-engagement voicemail.',
+      headline: 'Detailed Follow-Up Voicemail Left After Email Delivery Correction',
+      what_happened: 'Arun navigated an automated screening service and left a 95-second voicemail for Ritesh at Lanternpath Media following up on expense software collateral re-sent to a corrected email address.',
+      why_it_matters: 'Active account re-engagement attempt following an earlier email delivery issue; rep clearly stated purpose and requested callback.',
       evidence_citations: [
         {
           id: 'c04-cite-1',
           type: 'quote',
           reference: 'Spoken Transcript',
-          quote: "Arun from SpendNest here. I'm following up on your consideration of our expense platform for Lanternpath Media. My understanding is that our information first went to the wrong email address.",
-          note: 'Arun speaks directly into voicemail explaining email delivery correction.'
+          quote: "Arun from SpendNest here. I'm following up on your consideration of our expense platform for Lanternpath Media. My understanding is that our information first went to the wrong email address. We subsequently used the corrected address you gave us, and I hope you have now had a chance to see it.",
+          note: 'Arun leaves detailed voicemail with context on corrected proposal email.'
         }
       ],
       what_evidence_does_not_establish: [
-        'Does not establish whether Ritesh received or opened the corrected email.'
+        'Does not establish whether Ritesh opened or reviewed the corrected email proposal.'
       ],
-      discrepancy: {
-        field: 'is_connected',
-        upstream_claim: 'false',
-        spoken_reality: 'Spoke 95 seconds; automated screening passed; voicemail recorded.',
-        impact_explanation: 'Telephony telemetry counted this as an unreached dial, hiding substantial rep effort.',
-        severity: 'medium'
-      },
       next_steps: [
         {
           action: 'Monitor email open tracking for Lanternpath Media proposal.',
@@ -401,34 +394,49 @@ export const DOSSIERS: Record<string, {
   M02: {
     routes: ['internal_ops'],
     analysis: () => ({
-      headline: 'LedgerBridge Technology Integration - Vendor Architecture Session',
-      what_happened: 'SpendNest strategy team met with Supplier A from LedgerBridge. LedgerBridge is an electronic invoicing and AP gateway vendor pitching technical integration options (white-labeling vs standard connector).',
-      why_it_matters: 'This is NOT a sales lead! This is a technical vendor supplier discussion that must be routed to Engineering/Product, not revenue pipeline.',
+      headline: 'LedgerBridge Technology Integration - Electronic Invoicing Gateway Architecture',
+      what_happened: 'SpendNest strategy (Team member A) and product (Team member B) met with Supplier A from LedgerBridge to evaluate compliant electronic invoicing coverage across Singapore, Australia, and India. Discussed API integration flows, sandbox testing, and commercial licensing models.',
+      why_it_matters: 'This is a technical vendor supplier evaluation for a Q4 product extension, NOT a sales opportunity. It belongs in internal operations and engineering review, not sales pipeline.',
       evidence_citations: [
         {
           id: 'm02-cite-1',
           type: 'turn',
-          turn_number: 2,
-          speaker: 'Supplier A',
-          reference: 'Turn 2',
-          note: 'Supplier A outlines technical integration options for electronic invoicing.'
+          turn_number: 3,
+          speaker: 'Team member B',
+          reference: 'Turn 3',
+          note: 'Team Member B confirms electronic invoicing is the core opportunity: "Customers already have approved invoice layouts. The manual part is taking that information into separate portals."'
         },
         {
           id: 'm02-cite-2',
           type: 'turn',
-          turn_number: 3,
-          speaker: 'Team member B',
-          reference: 'Turn 3',
-          note: 'Team Member B confirms electronic invoicing opportunity aligns with customer demand.'
+          turn_number: 29,
+          speaker: 'Supplier A',
+          reference: 'Turn 29',
+          note: 'Supplier A outlines commercial licensing models: country licences with transaction usage, or licences per end customer with volume tiers.'
+        },
+        {
+          id: 'm02-cite-3',
+          type: 'turn',
+          turn_number: 31,
+          speaker: 'Supplier A',
+          reference: 'Turn 31',
+          note: 'Supplier A states pricing: "Basic setup begins at EUR 2,600; a more supported implementation starts at EUR 6,500... The initial setup covers the markets together."'
         }
       ],
       what_evidence_does_not_establish: [
-        'Does not establish API latency SLAs or commercial contract terms.'
+        'Does not establish firm Q4 delivery commitment (Team member B notes early next year is possible if schedule slips).',
+        'Does not establish volume estimates for issued invoices since receivables module is still in development.'
       ],
       next_steps: [
         {
-          action: 'Forward LedgerBridge schema and invoice mapping template to Product Engineering.',
-          owner: 'Team member B',
+          action: 'Supplier A to send volume template for country and customer tier projections.',
+          owner: 'Supplier A',
+          timing: '2026-08-22',
+          verifiable: true
+        },
+        {
+          action: 'SpendNest team to complete volume projections and conduct short pricing explanation call before presenting to management.',
+          owner: 'Team member A',
           timing: '2026-08-25',
           verifiable: true
         }
@@ -440,39 +448,70 @@ export const DOSSIERS: Record<string, {
   M03: {
     routes: ['deal_next_steps', 'sales_coaching'],
     analysis: () => ({
-      headline: 'Asterloom Systems - High-Value Evaluation with CFO Gatekeeper',
-      what_happened: 'Customer A and Customer B (Finance) evaluated SpendNest corporate cards and accounting automation. Current process: slow payroll reimbursement. Key objections: overseas card provider already chosen; CFO is price-sensitive but demands clean monthly accounting reconciliation.',
-      why_it_matters: 'Core pipeline deal. Customer B emphasized that CFO approval is required before scheduling any further calls, and requested written materials first.',
+      headline: 'Asterloom Systems - Domestic Prepaid Card Evaluation & Pricing Presentation Coaching',
+      what_happened: 'Team Member A met with Customer A and Customer B (Finance) from Asterloom Systems (~65 employees). Evaluated domestic prepaid cards for travel expenses. Key coaching moment occurred when Team Member A quoted INR 39,000 annual fee, causing Customer A to push back ("you previously told me INR 26,000"). Team Member A then clarified that INR 13,000 was a one-time accounting integration setup charge.',
+      why_it_matters: 'Core pipeline evaluation. Transparent pricing communication is critical: bundling setup fees into recurring annual quotes without upfront explanation risks trust. Prospect proposed a 4-5 employee trial before CFO sign-off.',
       evidence_citations: [
         {
           id: 'm03-cite-1',
           type: 'turn',
-          turn_number: 3,
-          speaker: 'Customer B',
-          reference: 'Turn 3',
-          note: 'Customer B highlights domestic payroll reimbursement pain vs established overseas provider.'
+          turn_number: 22,
+          speaker: 'Team member A',
+          reference: 'Turn 22',
+          note: 'Team Member A quotes INR 39,000 plus tax for the cards arrangement up to INR 13 lakh monthly band.'
         },
         {
           id: 'm03-cite-2',
           type: 'turn',
+          turn_number: 23,
+          speaker: 'Customer A',
+          reference: 'Turn 23',
+          note: 'Customer A raises price discrepancy: "But you previously told me INR 26,000. Why has that become INR 39,000?"'
+        },
+        {
+          id: 'm03-cite-3',
+          type: 'turn',
+          turn_number: 24,
+          speaker: 'Team member A',
+          reference: 'Turn 24',
+          note: 'Rep clarifies breakdown: INR 26,000 recurring subscription plus INR 13,000 one-time accounting setup.'
+        },
+        {
+          id: 'm03-cite-4',
+          type: 'turn',
+          turn_number: 26,
+          speaker: 'Customer B',
+          reference: 'Turn 26',
+          note: 'Customer B proposes starting with a 4-5 employee travel card trial before wider rollout.'
+        },
+        {
+          id: 'm03-cite-5',
+          type: 'turn',
           turn_number: 36,
           speaker: 'Customer B',
           reference: 'Turn 36',
-          note: 'Customer B: "Send the details first. We need time with the CFO... Let us make that decision internally before scheduling anything."'
+          note: 'Customer B requires written materials for CFO: "Send the details first. We need time with the CFO and will tell you if another call is needed."'
         }
       ],
       what_evidence_does_not_establish: [
-        'Does not establish company budget or definitive employee headcount.'
+        'Does not establish whether CFO will approve the initial 4-5 employee travel card trial.',
+        'Does not establish vendor payables volume (estimated tentatively at INR 26-39 lakh/mo in Turn 34).'
       ],
       next_steps: [
         {
-          action: 'Send executive summary and accounting reconciliation whitepaper tailored for the CFO.',
+          action: 'Send structured proposal to Customer A and Customer B explicitly itemizing INR 26,000 annual subscription and INR 13,000 setup fee.',
           owner: 'Team member A',
           timing: '2026-08-22 EOD',
           verifiable: true
         },
         {
-          action: 'Hold follow-up scheduling until internal CFO review completes (do not pressure for next call).',
+          action: 'Sales coaching 1-on-1 on fee transparency: always disclose recurring SaaS fees separately from one-time onboarding charges.',
+          owner: 'Sales Manager',
+          timing: '2026-08-25',
+          verifiable: true
+        },
+        {
+          action: 'Hold follow-up outreach until Asterloom internal CFO review completes (do not prematurely push for meetings).',
           owner: 'Team member A',
           timing: '2026-08-28',
           verifiable: true
@@ -483,37 +522,52 @@ export const DOSSIERS: Record<string, {
   },
 
   M04: {
-    routes: ['customer_success'],
+    routes: ['customer_success', 'deal_next_steps'],
     analysis: () => ({
-      headline: 'Cedarwave Distribution - Card Program Migration & Fuel Acceptance',
-      what_happened: 'Team Member A reviewed card migration timeline with Customer A. Customer uses physical cards heavily and has experienced transaction declines at fuel outlets. Customer expressed concern regarding wallet-payment transition timing.',
-      why_it_matters: 'Customer retention risk. Physical card acceptance failures directly impact field logistics and operations.',
+      headline: 'Cedarwave Distribution - Card Migration & Corporate Credit Line Integration',
+      what_happened: 'Team Member A met with Customer A and Customer B from Cedarwave Distribution to discuss migrating away from an existing card program. Customer A stated that moving from prepaid to corporate credit is their main requirement (Turn 11). Cedarwave already holds an INR 1.3 crore bank corporate credit line (Turn 22) and requested connecting bank credit cards for ~26 staff while keeping SpendNest prepaid cards for remaining employees.',
+      why_it_matters: 'Key enterprise account at migration risk. Cedarwave requires a hybrid credit + prepaid solution with transaction feeds and receipt approvals syncing to accounting, rather than an all-prepaid replacement.',
       evidence_citations: [
         {
           id: 'm04-cite-1',
           type: 'turn',
-          turn_number: 2,
-          speaker: 'Team member A',
-          reference: 'Turn 2',
-          note: 'Team Member A notes acceptance problems with existing card provider at fuel outlets.'
+          turn_number: 11,
+          speaker: 'Customer A',
+          reference: 'Turn 11',
+          note: 'Customer A confirms priority: "moving from prepaid to credit is the main issue for us. At some stage we will have to consider another option for that."'
         },
         {
           id: 'm04-cite-2',
           type: 'turn',
-          turn_number: 32,
+          turn_number: 13,
           speaker: 'Customer A',
-          reference: 'Turn 32',
-          note: 'Customer A agrees to review migration timeline and verify fleet driver counts.'
+          reference: 'Turn 13',
+          note: 'Customer A proposes hybrid model: "Perhaps we get credit cards for around 26 people and keep SpendNest prepaid cards for the others."'
+        },
+        {
+          id: 'm04-cite-3',
+          type: 'turn',
+          turn_number: 22,
+          speaker: 'Customer B',
+          reference: 'Turn 22',
+          note: 'Customer B: "We already have a corporate credit line of about INR 1.3 crore. Cards are issued to only a few people so far... If your platform can sit in between, we should understand that route."'
         }
       ],
       what_evidence_does_not_establish: [
-        'Does not establish whether card decline issue is merchant-code specific or network level.'
+        'Does not establish whether Cedarwave\'s bank credit card feed can be integrated into SpendNest\'s settlement feed.',
+        'Does not establish source-balance accounting reconciliation feasibility for bank credit cards.'
       ],
       next_steps: [
         {
-          action: 'Provide written migration FAQ on fuel merchant category acceptance for drivers.',
+          action: 'Investigate technical and network feasibility of ingesting Cedarwave\'s bank-issued credit card transaction feeds.',
           owner: 'Team member A',
-          timing: '2026-08-24',
+          timing: '2026-08-25',
+          verifiable: true
+        },
+        {
+          action: 'Prepare hybrid commercial proposal: bank credit card management for 26 users plus parallel prepaid program for remainder.',
+          owner: 'Team member A',
+          timing: '2026-08-26',
           verifiable: true
         }
       ],
@@ -561,27 +615,27 @@ export const DOSSIERS: Record<string, {
   },
 
   M07: {
-    routes: ['customer_support'],
+    routes: (revision: number) => revision === 1 ? ['intake_exception'] : ['customer_support'],
     analysis: (revision: number) => {
       if (revision === 1) {
         return {
-          headline: 'Intake Awaiting Late Transcript Delivery',
-          what_happened: 'Meeting metadata received with 0 usable turns. Upstream delivery noted transcript will arrive in update batch.',
-          why_it_matters: 'Record is staged in intake; substantive analysis withheld until verified transcript arrives.',
+          headline: 'Willowfield Trust - Intake Awaiting Staged Transcript Delivery',
+          what_happened: 'Meeting metadata received with 0 usable turns (recording status "recorded", organizer team09@example.com). Upstream delivery contract staged transcript delivery for subsequent update batch.',
+          why_it_matters: 'Record held in intake exception queue; substantive conversation analysis deliberately withheld until verified speech text arrives.',
           evidence_citations: [
             {
               id: 'm07-cite-init',
               type: 'telemetry',
               reference: 'Delivery Envelope',
-              note: 'Transcript withheld in initial delivery; scheduled to arrive in batch update-002.'
+              note: 'Transcript withheld in initial delivery (01_initial.json); scheduled to arrive in update batch (02_update.json).'
             }
           ],
           what_evidence_does_not_establish: [
-            'Does not establish meeting discussion topics or attendee sentiment.'
+            'Does not establish meeting topics, attendee discussion, or operational action items.'
           ],
           next_steps: [
             {
-              action: 'Ingest update-002 batch to populate complete transcript.',
+              action: 'Ingest update batch 02_update.json to populate verified meeting transcript.',
               owner: 'System / Evaluator',
               timing: 'Batch Ingestion',
               verifiable: true
@@ -593,9 +647,9 @@ export const DOSSIERS: Record<string, {
 
       // Revision 2 (Update Batch)
       return {
-        headline: 'Willowfield Trust - Bug Report: UI Description Editing Failure',
-        what_happened: 'Customer A shared screen to demonstrate a reproduction of a software bug: editing an event-payment description reverts to the old wording upon saving. Team Member A confirmed the defect and committed to logging it with engineering.',
-        why_it_matters: 'Severe UX/data persistence defect affecting customer records. Must be routed to Engineering/Product Support immediately.',
+        headline: 'Willowfield Trust - Customer Defect Review (4 UI & Payment Defects)',
+        what_happened: 'Customer A demonstrated four distinct software defects via screen share with Team Member A: 1) Event-payment description editing reverts to old wording on save (Turns 2-7); 2) "Recreate payment" direct file upload fails (workaround: save, return to invoice inbox, open Review, attach file) (Turns 8-15); 3) Reimbursement payments stuck in "Processing" state and cannot be selected (Turns 16-19); 4) "Mark as paid" retains previous item\'s amount (INR 18,200) instead of refreshing to the next payment\'s value (Turns 20-25). Team Member A took screenshots and committed to getting confirmation from engineering.',
+        why_it_matters: 'Severe customer-facing UI, document upload, and payment state bugs affecting accounting accuracy. Requires immediate technical investigation and support resolution.',
         evidence_citations: [
           {
             id: 'm07-cite-rev2-1',
@@ -603,29 +657,46 @@ export const DOSSIERS: Record<string, {
             turn_number: 2,
             speaker: 'Customer A',
             reference: 'Turn 2',
-            note: 'Customer A shows screen: changing event-payment description does not persist after clicking save.'
+            note: 'Description editing failure: "I am changing this event-payment description to a short reference and clicking Save changes. Now look at the displayed description again."'
           },
           {
             id: 'm07-cite-rev2-2',
             type: 'turn',
-            turn_number: 26,
+            turn_number: 16,
+            speaker: 'Customer A',
+            reference: 'Turn 16',
+            note: 'Reimbursement processing lock: "The next issue is in reimbursements. I cannot select the first group of transactions on this screen."'
+          },
+          {
+            id: 'm07-cite-rev2-3',
+            type: 'turn',
+            turn_number: 21,
+            speaker: 'Customer A',
+            reference: 'Turn 21',
+            note: 'Mark as paid amount retention: "When I use Mark as paid, the first payment shows INR 18,200... The amount from the previous item appears in the next one."'
+          },
+          {
+            id: 'm07-cite-rev2-4',
+            type: 'turn',
+            turn_number: 27,
             speaker: 'Team member A',
-            reference: 'Turn 26',
+            reference: 'Turn 27',
             note: 'Team member A commits: "I will send the details to the team, get their confirmation and come back to you."'
           }
         ],
         what_evidence_does_not_establish: [
-          'Does not establish whether defect affects all browser clients or specific tenant permissions.'
+          'Does not establish whether bugs affect all tenant workspaces or are restricted to specific browser environments.',
+          'Does not establish whether an engineering ticket has already been logged prior to this call.'
         ],
         next_steps: [
           {
-            action: 'File high-priority Jira bug ticket for payment description mutation failure.',
+            action: 'Report the 4 documented defects (description persistence, recreate payment attachment, stuck reimbursement processing, mark as paid value retention) to engineering.',
             owner: 'Team member A',
             timing: 'Immediate (2026-08-21)',
             verifiable: true
           },
           {
-            action: 'Provide engineering confirmation to Customer A.',
+            action: 'Provide engineering confirmation and resolution ETA to Customer A.',
             owner: 'Team member A',
             timing: '2026-08-22',
             verifiable: true
@@ -639,35 +710,63 @@ export const DOSSIERS: Record<string, {
   M09: {
     routes: ['customer_support', 'customer_success'],
     analysis: () => ({
-      headline: 'Brookmint Holdings - Onboarding Blocker: Invitation Link Failure',
-      what_happened: 'Customer A reported that account invitation links for Brookmint Holdings failed to activate. Discussion focused on multi-entity tenant access and separating work email identities across business divisions.',
-      why_it_matters: 'Onboarding defect blocking tenant user activation.',
+      headline: 'Brookmint Holdings - Onboarding Blocker: Expired Reset Token Defect & Account Architecture',
+      what_happened: 'Team Member A met with Customer A to resolve onboarding issues for Brookmint Holdings and Northkite Equipment. Discussion covered shared mailbox vs individual administrator permissions (Turns 9-18). When Team Member A sent a fresh password reset email during the call, clicking the newly received link failed immediately with "token has expired" (Turn 21). Team Member A committed to investigating the token defect with engineering by EOD or Monday.',
+      why_it_matters: 'Critical onboarding failure: newly generated invitation/reset tokens expire prematurely, blocking company administrator access for Brookmint Holdings (which houses the majority of users).',
       evidence_citations: [
         {
           id: 'm09-cite-1',
           type: 'turn',
-          turn_number: 1,
+          turn_number: 21,
           speaker: 'Customer A',
-          reference: 'Turn 1',
-          note: 'Customer A: "The invitation for Brookmint Holdings did not work... A fresh link would help."'
+          reference: 'Turn 21',
+          note: 'Customer A confirms fresh link failure: "It says the token has expired. This is the fresh message we just received."'
         },
         {
           id: 'm09-cite-2',
           type: 'turn',
+          turn_number: 22,
+          speaker: 'Team member A',
+          reference: 'Turn 22',
+          note: 'Team member A commitments: "I need to check that with the team. I hope to update you today, or by Monday at the latest. We have not got the Brookmint Holdings login working yet."'
+        },
+        {
+          id: 'm09-cite-3',
+          type: 'turn',
+          turn_number: 31,
+          speaker: 'Team member A',
+          reference: 'Turn 31',
+          note: 'Team member A reiterates deadline: "I will check the expired-token problem for Brookmint Holdings with the team and aim to return with an update today, otherwise Monday."'
+        },
+        {
+          id: 'm09-cite-4',
+          type: 'turn',
           turn_number: 32,
           speaker: 'Customer A',
           reference: 'Turn 32',
-          note: 'Customer A agrees to review separate email identities with internal IT.'
+          note: 'Customer A next step: "I will speak to our IT team about the separate email identities. Thank you."'
         }
       ],
       what_evidence_does_not_establish: [
-        'Does not establish whether invitation expiration was caused by token expiry or SSO misconfiguration.'
+        'Does not establish whether the expired-token defect is caused by backend clock skew, token TTL configuration, or email client security scanners pre-fetching links.'
       ],
       next_steps: [
         {
-          action: 'Re-issue fresh tenant invitation link for Brookmint Holdings account.',
+          action: 'Investigate and resolve expired-token defect on Brookmint Holdings reset links with engineering by EOD or Monday.',
           owner: 'Team member A',
-          timing: 'Immediate',
+          timing: '2026-08-21 EOD / 2026-08-24',
+          verifiable: true
+        },
+        {
+          action: 'Customer A to consult internal IT team on establishing separate email identities for Brookmint Holdings vs Northkite Equipment.',
+          owner: 'Customer A',
+          timing: '2026-08-24',
+          verifiable: true
+        },
+        {
+          action: 'Customer A to review training video walkthroughs before scheduling subsequent admin workflow session.',
+          owner: 'Customer A',
+          timing: '2026-08-25',
           verifiable: true
         }
       ],

@@ -100,8 +100,8 @@ test.describe('Tier 3 E2E Browser Test: Revenue Intelligence Inbox', () => {
     // 2. Switch to Discrepancy Radar
     await page.locator('button[title*="Discrepancy Radar"]').click();
     await expect(page.locator('text=Discrepancy Radar & Telemetry Audits')).toBeVisible();
-    await expect(page.locator('text=Connection False Negative')).toBeVisible();
     await expect(page.locator('text=Voice Attribution Mismatch')).toBeVisible();
+    await expect(page.locator('text=Departed Lead')).toBeVisible();
 
     // 3. Inspect Anomaly C06 from the radar
     await page.click('button:has-text("Inspect Record C06")');

@@ -3,6 +3,7 @@ import {
   Play, 
   RotateCcw, 
   CheckCircle2, 
+  AlertTriangle,
   Layers, 
   ArrowRight,
   Database,
@@ -278,13 +279,19 @@ export const ReplayBar: React.FC<ReplayBarProps> = ({
                   Data Contract Verification Audit
                 </h3>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                100% Passed
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                testResults.all_checks_passed 
+                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' 
+                  : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+              }`}>
+                {testResults.all_checks_passed 
+                  ? '100% Passed' 
+                  : `${testResults.steps.filter((s: any) => s.passed).length} / ${testResults.steps.filter((s: any) => s.passed !== undefined).length} Passed`}
               </span>
             </div>
 
             <p className="text-xs text-dark-300 mb-4">
-              All five behavioural and idempotency scenarios passed:
+              Automated evaluation suite verifying the 5 contract scenarios against live API responses:
             </p>
 
             <div className="space-y-2 mb-6">
@@ -302,10 +309,23 @@ export const ReplayBar: React.FC<ReplayBarProps> = ({
                       {st.m07_override_preserved !== undefined && `Override Preserved: ${st.m07_override_preserved ? 'Yes' : 'No'}`}
                     </div>
                   </div>
-                  <span className="text-emerald-400 font-semibold text-xs flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Verified
-                  </span>
+                  {st.passed !== undefined && (
+                    <span className={`font-semibold text-xs flex items-center gap-1 ${
+                      st.passed ? 'text-emerald-400' : 'text-rose-400'
+                    }`}>
+                      {st.passed ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Verified</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          <span>Failed</span>
+                        </>
+                      )}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

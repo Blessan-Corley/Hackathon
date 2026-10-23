@@ -163,6 +163,13 @@ export interface DashboardMetrics {
     call_reps: Array<{ name: string; email: string | null; total_calls: number; connected_calls: number; usable_transcripts: number }>;
     meeting_organizers: Array<{ email: string; total_meetings: number; recorded_meetings: number; usable_transcripts: number }>;
   };
+  hourly_activity?: Array<{
+    hour: number;
+    label: string;
+    calls: number;
+    meetings: number;
+    total: number;
+  }>;
 }
 
 export interface ExportManifestEntry {

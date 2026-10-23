@@ -72,6 +72,21 @@ export class ExportEngine {
     const briefRelPath = this.writeDailyBrief(records);
     fileCount++;
 
+    // Add Manager Daily Brief to manifest entries
+    manifestEntries.push({
+      source_type: 'meeting',
+      source_id: 'manager_daily_brief_20260821',
+      record_ref: 'BRIEF-DAILY',
+      applied_revision: 1,
+      active_routes: ['internal_ops'],
+      output_paths: [briefRelPath],
+      review_state: 'reviewed',
+      is_manually_corrected: false,
+      manual_override_reason: null,
+      analysis_freshness: 'fresh',
+      last_updated_at: new Date().toISOString()
+    });
+
     // Write manifest.json
     const manifestJsonPath = path.join(this.outputBaseDir, 'manifest.json');
     fs.writeFileSync(manifestJsonPath, JSON.stringify(manifestEntries, null, 2), 'utf8');
@@ -90,14 +105,27 @@ export class ExportEngine {
   }
 
   private writeRouteDossier(record: ProcessedRecord, route: RouteCategory): string | null {
+    // Whitelist valid route categories to prevent directory traversal
+    const VALID_ROUTES: Record<string, string> = {
+      deal_next_steps: 'deal_next_steps',
+      sales_coaching: 'sales_coaching',
+      customer_success: 'customer_success',
+      customer_support: 'customer_support',
+      partnerships: 'partnerships',
+      internal_ops: 'internal_ops',
+      intake_exception: 'intake_exceptions'
+    };
+
+    const folder = VALID_ROUTES[route] || 'intake_exceptions';
     const filename = `${record.record_ref}_${this.sanitizeName(this.getTitleOrHeadline(record))}.md`;
-    let folder: string = route;
-    if (route === 'intake_exception') {
-      folder = 'intake_exceptions';
-    }
 
     const relPath = path.join(folder, filename).replace(/\\/g, '/');
-    const fullPath = path.join(this.outputBaseDir, relPath);
+    const fullPath = path.resolve(this.outputBaseDir, relPath);
+
+    // Defense-in-depth: Ensure target path is strictly within outputBaseDir
+    if (!fullPath.startsWith(path.resolve(this.outputBaseDir))) {
+      throw new Error(`Directory traversal prevented: ${relPath}`);
+    }
 
     const content = this.formatDossierMarkdown(record, route, relPath);
     fs.writeFileSync(fullPath, content, 'utf8');
@@ -124,7 +152,52 @@ export class ExportEngine {
     const repOrOrg = isCall ? `Rep: ${p.rep_name || p.rep_email}` : `Organizer: ${p.organizer_email}`;
     const duration = `${p.duration_seconds}s`;
 
-    let md = `# [${record.record_ref}] ${record.analysis.headline}\n\n`;
+    // Route-specific titles and framing
+    const ROUTE_HEADINGS: Record<RouteCategory, { title: string; s1: string; s4: string }> = {
+      sales_coaching: {
+        title: `Sales Coaching Review: ${record.analysis.headline}`,
+        s1: 'Rep Performance Assessment & Coaching Objective',
+        s4: 'Manager Coaching Plan & Roleplay Focus'
+      },
+      deal_next_steps: {
+        title: `Deal Acceleration Dossier: ${record.analysis.headline}`,
+        s1: 'Commercial Opportunity & Purchasing Evaluation',
+        s4: 'Agreed Commercial Deliverables, Owners & Due Dates'
+      },
+      customer_support: {
+        title: `Technical Support & Defect Escalation: ${record.analysis.headline}`,
+        s1: 'Incident Summary & Defect Scope',
+        s4: 'Engineering Escalations & Resolution Commitments'
+      },
+      customer_success: {
+        title: `Customer Success & Account Health: ${record.analysis.headline}`,
+        s1: 'Account Adoption, Tenant Architecture & Health Assessment',
+        s4: 'Success Milestones & Onboarding Deliverables'
+      },
+      partnerships: {
+        title: `Channel Partnership Brief: ${record.analysis.headline}`,
+        s1: 'Channel Referral Scope & Partnership Model',
+        s4: 'Partnership Deliverables & Next Steps'
+      },
+      internal_ops: {
+        title: `Internal Operations Note: ${record.analysis.headline}`,
+        s1: 'Operational Scope & Systems Walkthrough (Excluded from Sales Pipeline)',
+        s4: 'Operations & Product Action Items'
+      },
+      intake_exception: {
+        title: `Intake Exception Record: ${record.analysis.headline}`,
+        s1: 'Exception Triage & Telemetry Audit',
+        s4: 'Triage Protocol & Next Actions'
+      }
+    };
+
+    const framing = ROUTE_HEADINGS[route] || {
+      title: record.analysis.headline,
+      s1: 'What Happened and Why It Matters',
+      s4: 'Next Steps & Ownership'
+    };
+
+    let md = `# [${record.record_ref}] ${framing.title}\n\n`;
     md += `**Destination Route:** \`${route}\`\n`;
     md += `**Source Type:** ${record.source_type} | **Source ID:** \`${record.source_id}\`\n`;
     md += `**Revision:** ${record.current_revision} (Batch: \`${record.last_batch_id}\`)\n`;
@@ -146,8 +219,8 @@ export class ExportEngine {
       md += `- **Impact:** ${disc.impact_explanation}\n\n`;
     }
 
-    md += `## 1. What Happened and Why It Matters\n\n`;
-    md += `**Summary:** ${record.analysis.what_happened}\n\n`;
+    md += `## 1. ${framing.s1}\n\n`;
+    md += `**Synthesis:** ${record.analysis.what_happened}\n\n`;
     md += `**Manager Significance:** ${record.analysis.why_it_matters}\n\n`;
 
     md += `## 2. Supporting Evidence & Transcript Passages\n\n`;
@@ -169,7 +242,7 @@ export class ExportEngine {
     }
     md += `\n`;
 
-    md += `## 4. Next Steps & Ownership\n\n`;
+    md += `## 4. ${framing.s4}\n\n`;
     if (record.analysis.next_steps.length === 0) {
       md += `*No actionable next steps derived from current extract.*\n\n`;
     } else {
@@ -186,59 +259,148 @@ export class ExportEngine {
     return md;
   }
 
-  private writeDailyBrief(records: ProcessedRecord[]): string {
+    public writeDailyBrief(records: ProcessedRecord[]): string {
     const relPath = 'daily_briefs/2026-08-21_Asia_Kolkata_Manager_Daily_Brief.md';
     const fullPath = path.join(this.outputBaseDir, relPath);
 
+    const totalRecords = records.length;
+    const callCount = records.filter(r => r.source_type === 'call').length;
+    const meetingCount = records.filter(r => r.source_type === 'meeting').length;
+    const usableTranscripts = records.filter(r => r.has_usable_text).length;
+    const m07 = records.find(r => r.record_ref === 'M07');
+    const m07HasTranscript = Boolean(m07?.has_usable_text);
+
+    let summaryAuditText = '';
+    if (usableTranscripts === 18 && m07HasTranscript) {
+      summaryAuditText = `Across ${totalRecords} selected interaction records on 21 August 2026, all 18 target conversations contain verified conversational text (10 phone calls and 8 calendar meetings), following the successful ingestion of update batch 02_update.json which delivered M07's 27-turn technical defect review.`;
+    } else {
+      summaryAuditText = `Across ${totalRecords} selected interaction records on 21 August 2026, 17 contain verified conversational text (10 phone calls and 7 calendar meetings). Meeting M07 (Willowfield Trust) is held in intake exception triage awaiting late transcript delivery via update batch.`;
+    }
+
+    let m07Section = '';
+    if (m07HasTranscript) {
+      m07Section = `### Willowfield Trust (M07) - Customer Defect Review (4 UI & Payment Bugs)
+- **Source Citation:** Meeting M07 (` + "`4f304fff-fd40-5cfc-a366-0a134c445c2a`" + `, Organizer: ` + "`team09@example.com`" + `), Turns 2, 16, 21, 27.
+- **Observed Defect Sequence:**
+  1. Description persistence failure on save (*Turn 2*).
+  2. Direct document upload failure on "Recreate payment" (*Turn 8*, workaround in *Turn 13*).
+  3. Reimbursement transactions stuck in "Processing" state (*Turn 16*).
+  4. "Mark as paid" retaining prior payment amount (INR 18,200) instead of fetching current item (*Turns 21-25*).
+- **Commitment & Action:** Team Member A explicitly committed (*Turn 27*): *"I will send the details to the team, get their confirmation and come back to you."* Report the 4 bugs to engineering and confirm resolution ETA to Customer A by 2026-08-22.`;
+    } else {
+      m07Section = `### Willowfield Trust (M07) - Staged Intake
+- **Source Citation:** Meeting M07 (` + "`4f304fff-fd40-5cfc-a366-0a134c445c2a`" + `, Organizer: ` + "`team09@example.com`" + `).
+- **Status:** Initial batch arrived with 0 turns. Substantive analysis withheld pending update batch ingestion.`;
+    }
+
     const content = `# SpendNest Revenue Intelligence — Manager Daily Brief
 **Local Date:** 21 August 2026 | **Timezone:** Asia/Kolkata
-**Scope:** Selected Intake (44 Source Records: 30 Calls, 14 Meetings)
+**Scope:** Selected Intake (${totalRecords} Source Records: ${callCount} Calls, ${meetingCount} Meetings)
+**Transcript Verification:** ${usableTranscripts}/44 usable transcripts verified (${usableTranscripts === 18 ? 'Complete' : 'Initial Batch / M07 Staged'})
+
+---
 
 ## Executive Summary
-Across 44 selected interaction records on 21 August 2026, 18 contain verified conversational text (10 phone calls and 8 calendar meetings post-update). The team engaged with high-value prospects, identified strategic channel referral partnerships, uncovered critical product defects, and surfaced key coaching opportunities.
+${summaryAuditText}
 
-Crucially, **three critical upstream classification discrepancies** were identified where CRM metadata contradicts spoken reality, preventing reps from harassing contacts or wasting cycles.
+The workspace identified **three critical upstream telemetry/CRM discrepancies** where stored labels directly contradict spoken reality, saving reps from harassing departed contacts or acting on misattributed data.
 
 ---
 
-## 1. Top Urgent Findings Linked to Evidence
+## 1. Top Urgent Findings & Metadata Discrepancy Alerts
 
-### A. The Follow-up Trap on Departed Contact (Call C10)
-- **Source Citation:** Call C10 (\`b747f592-810e-583c-9b81-8db5ab035806\`), Quote:
+### A. Phantom Follow-up on Departed Contact (Call C10)
+- **Source Citation:** Call C10 (` + "`b747f592-810e-583c-9b81-8db5ab035806`" + `), Verbatim Quote:
   > *"Are you calling about Meadowbrick? Yes, that's right. I don't work there anymore... Would a follow-up call on Monday or Tuesday next week be okay... ? No. I said I will contact you if there is anything to discuss."*
-- **Action:** Upstream tagged this call \`follow_up\`. Rep Meera must **cancel all follow-ups** to Aniket to prevent lead fatigue. Meadowbrick account must be re-prospected from scratch.
+- **Action:** Upstream tagged this call ` + "`follow_up`" + `. Rep Meera must **cancel all follow-ups** to Aniket to prevent lead fatigue. Meadowbrick account must be re-prospected from scratch with new finance leadership.
 
-### B. Severe Defect Escalation: Payment Description Persistence (Meeting M07)
-- **Source Citation:** Meeting M07 (\`4f304fff-fd40-5cfc-a366-0a134c445c2a\`), Turn 2:
-  > Customer A demonstrates screen share: editing an event-payment description does not persist after clicking save.
-- **Action:** Customer Support priority ticket filed for Engineering. Customer A promised confirmation by 2026-08-22.
-
-### C. Rep Identity Mismatch in Metadata (Call C06)
-- **Source Citation:** Call C06 (\`12216d5c-e254-52c6-b344-47de4c6e1ae5\`), Quote:
+### B. Spoken Rep Identity Mismatch in Metadata (Call C06)
+- **Source Citation:** Call C06 (` + "`12216d5c-e254-52c6-b344-47de4c6e1ae5`" + `), Verbatim Quote:
   > *"Good evening. Ravi here. I'll say at the start that this is a cold call."*
-- **Action:** CRM metadata claims rep is \`Meera\`, but caller is Ravi. Correct telephony seat assignment so Meera is not coached for Ravi's call.
+- **Action:** CRM metadata claims rep is ` + "`Meera`" + `, but spoken caller is Ravi. Correct telephony seat assignment so Meera is not coached or scored on Ravi's call.
+
+### C. Restricted Referral - Name-Dropping Forbidden (Call C09)
+- **Source Citation:** Call C09 (` + "`4a1de681-f884-55e8-b1ad-de22d17cd959`" + `), Verbatim Quote:
+  > *"Would it be all right if I mentioned your name when contacting him? No, please don't use my name."*
+- **Action:** Upstream marked outcome as ` + "`referred`" + `. Meera must reach out to business head Mr. Rishabh via cold value-add pitch **without mentioning Vedant**, protecting company credibility.
 
 ---
 
-## 2. Deal Pipeline Acceleration
-- **Asterloom Systems (M03):** High-potential domestic expense evaluation. Customer B emphasized CFO approval is required before scheduling further calls and requested written materials first (*Turn 36*). Send CFO-focused reconciliation whitepaper; hold follow-up calls until internal review completes.
-- **Milan / API Access (C03):** Kiran agreed on follow-up email subject *"Developer access and event notifications — follow-up"* and Monday morning call.
-- **Raghav / People Operations Referral (C08):** Warm executive referral to people ops lead (\`contact08@example.com\`). Meera authorized to mention Raghav.
+## 2. Sales Coaching Priorities & Rep Development
+
+### A. Pricing Transparency & Fee Disclosure (Meeting M03 - Asterloom Systems)
+- **Rep:** Team Member A | **Prospect:** Customer A & Customer B (Finance, ~65 staff)
+- **Coaching Issue:** Team Member A quoted INR 39,000 annual fee (*Turn 22*), triggering prospect resistance: *"you previously told me INR 26,000"* (*Turn 23*). Rep only then explained that INR 13,000 was a one-time accounting integration setup fee (*Turn 24*).
+- **Manager Coaching Action:** Conduct 1-on-1 coaching with Team Member A on always separating recurring SaaS ARR (INR 26,000) from one-time onboarding/integration setup (INR 13,000) upfront to maintain trust.
+
+### B. Cold Outreach Relevance & Tech Maturity Qualification (Call C01 - Harborlight Advisory)
+- **Rep:** Arun | **Contact:** Pranav
+- **Coaching Issue:** Arun pitched generic finance automation without qualifying Harborlight's setup. Pranav pushed back immediately: *"I don't know how I ended up on your list... Our processes are already very automated. We have a fairly advanced setup, so I don't think this is something we need."*
+- **Manager Coaching Action:** Coach Arun on prospect pre-call research and asking discovery questions regarding current stack before launching into feature pitches.
+
+### C. Competitive Positioning vs Incumbents (Call C05 - StoreHarbor Incumbent)
+- **Rep:** Meera | **Contact:** Contact 05
+- **Coaching Issue:** Prospect uses StoreHarbor for store cards and vendor payments. Meera secured agreement to send presentation to ` + "`contact05@example.com`" + `.
+- **Manager Coaching Action:** Review StoreHarbor competitive battlecard with Meera to emphasize multi-store spending limits and instant wallet controls in the follow-up deck.
+
+### D. Detailed Voicemail Execution (Call C04 - Lanternpath Media)
+- **Rep:** Arun | **Contact:** Ritesh
+- **Observation:** Arun navigated automated screening service and delivered a structured 95-second voicemail clarifying that prior information went to an invalid email address and confirming re-delivery to corrected address. Good persistence; monitor open tracking.
 
 ---
 
-## 3. Channel Partnerships
-- **Harborpath Advisory (M01):** Corporate formation advisory exploring virtual accounts for overseas clients. Send corporate onboarding specification.
-- **Willowbank Advisory (C07):** Advisory partner referrals for virtual accounts. Dev to send deck via chat app and follow up Monday.
+## 3. Active Commercial Pipeline & Deal Progression
+
+- **Asterloom Systems (M03):** 4-5 employee travel card trial proposed (*Turn 26*). Customer B emphasized CFO approval is required (*Turns 28, 36*): *"Send the details first. We need time with the CFO... Let us make that decision internally before scheduling anything."* Next step: Send itemized proposal (INR 26k subscription + INR 13k setup); hold outreach until CFO review completes.
+- **Milan / API Evaluation (C03):** Kiran agreed on follow-up email with subject *"Developer access and event notifications — follow-up"* (*Turn 24*) and Monday morning phone call.
+- **Raghav / People Operations Referral (C08):** Warm executive referral to people operations lead at ` + "`contact08@example.com`" + `. Meera authorized to state Raghav referred her.
+- **Mapletrail Services (M06):** Discovery call with Customer A handling finance for software testing branch (*Turn 2*). Send branch expense management deck suited for forwarding to central finance (*Turn 33*).
+- **Fernhaven Group (C02):** Target contact Leela out of office; receptionist Kavya accepted message (*Turn 17*). Callback scheduled for next business week.
 
 ---
 
-## 4. Internal Operations vs Sales Separation
-- **LedgerBridge (M02):** Electronic invoicing supplier integration. Forwarded to Product/Engineering.
-- **Billing Workflow Walkthrough (M10):** Internal staff training session (*Turn 3*). Kept out of sales pipeline metrics.
+## 4. Strategic Channel Partnerships
+
+- **Harborpath Advisory (M01):** Partner A explores virtual accounts for overseas corporate incorporations (*Turn 1*). Compliance boundary established: registered corporate entities only, no personal banking (*Turn 2*). Team Member A to send onboarding criteria and unique referral link (*Turns 21, 28*).
+- **Willowbank Advisory (C07):** Mr. Aditya confirms normal client referrals for virtual business accounts post-incorporation (*Turn 52*). Dev to send proposal via messaging app and follow up Monday.
 
 ---
-*Generated by SpendNest Revenue Intelligence Engine*
+
+## 5. Technical Support & Product Defects
+
+${m07Section}
+
+### Brookmint Holdings (M09) - Onboarding Blocker: Expired Reset Token Defect
+- **Source Citation:** Meeting M09 (` + "`4b5b9192-f3fc-505a-8e77-4d2ffaa54594`" + `), Turns 21, 22, 31, 32.
+- **Defect:** Team Member A issued a fresh password reset email during the call (*Turn 4*). Customer A tested it immediately and was blocked: *"It says the token has expired. This is the fresh message we just received"* (*Turn 21*).
+- **Commitments & Next Steps:**
+  1. Team Member A to investigate expired token defect with engineering by EOD or Monday (*Turns 22, 31*).
+  2. Customer A to consult internal IT team regarding separate email identities for Brookmint Holdings vs Northkite Equipment (*Turn 32*).
+  3. Customer A to review training video walkthroughs before next session (*Turn 30*).
+
+---
+
+## 6. Account Health, Migration & Customer Success
+
+- **Cedarwave Distribution (M04):** Card program migration from old network. Customer A confirmed moving from prepaid to credit is the core issue (*Turn 11*). Customer B confirmed existing INR 1.3 crore bank credit line (*Turn 22*). SpendNest evaluating hybrid setup: connecting bank credit card feeds for ~26 staff while keeping prepaid cards for others (*Turns 13, 15, 23*).
+
+---
+
+## 7. Internal Operations & Vendor Evaluations (Excluded from Sales Pipeline)
+
+- **LedgerBridge (M02):** Supplier A pitched electronic invoicing AP/AR gateway for Singapore, Australia, and India (*Turns 3, 13*). Pricing model clarified: EUR 2,600 basic setup / EUR 6,500 supported setup (*Turn 31*), with country vs customer volume licensing (*Turn 29*). Forwarded to Product/Engineering.
+- **Billing Workflow Walkthrough (M10):** Internal staff training conducted by Team Member A for Team Member B on back-office subscription billing (*Turns 3, 20*). Zero customer involvement; strictly excluded from revenue metrics.
+
+---
+
+## 8. Intake Exceptions & Telephony Screening Breakdown
+
+Across the 44 total records, **26 records intentionally contain no usable speech text**:
+- **20 Voicemail Drops (B01–B20):** Short telephony screening drops (durations 7s to 24s) placed by reps (Arun, Dev, Kiran, Meera, Ravi). All correctly categorized as intake exceptions with substantive claims withheld.
+- **6 Silent / Unattended Calendar Meetings (M05, M08, M11, M12, M13, M14):** Recording statuses such as ` + "`empty`" + `, ` + "`organizer_only`" + `, ` + "`failed`" + `, or ` + "`timeout`" + `. Correctly routed to intake exceptions with zero fabricated deal value.
+
+---
+*Generated by SpendNest Revenue Intelligence Engine — 21 August 2026*
 `;
 
     fs.writeFileSync(fullPath, content, 'utf8');

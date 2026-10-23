@@ -7,6 +7,7 @@ import {
   Info,
   ShieldAlert,
   SlidersHorizontal,
+  Clock,
   X
 } from 'lucide-react';
 import { DashboardMetrics } from '../types/index.js';
@@ -61,9 +62,9 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
   };
 
   return (
-    <div ref={containerRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6 relative z-30">
-      
-      {/* 1. Total Selected Records */}
+    <div ref={containerRef} className="space-y-3 mb-6 relative z-30">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* 1. Total Selected Records */}
       <div 
         onClick={() => onFilterBySource?.('all')}
         className={`glass-card glass-card-hover rounded-2xl p-4 cursor-pointer relative transition-all ${
@@ -336,6 +337,84 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
           </div>
         )}
       </div>
+      </div>
+
+      {/* 7. Hourly Activity Timeline Strip (09:00 - 23:00 Asia/Kolkata) */}
+      {metrics.hourly_activity && metrics.hourly_activity.length > 0 && (
+        <div className="glass-card rounded-2xl p-4 border border-white/[0.08] relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-sky-400" />
+              <span className="text-xs font-semibold text-white tracking-tight">
+                Activity Distribution by Hour — 21 August 2026 (Asia/Kolkata)
+              </span>
+              <span className="text-[11px] text-dark-400 font-mono">
+                ({metrics.total_selected_records} records in current filter slice)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 text-[11px] font-mono">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-sm bg-sky-400 inline-block"></span>
+                <span className="text-dark-300">Calls ({metrics.total_calls})</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-sm bg-purple-400 inline-block"></span>
+                <span className="text-dark-300">Meetings ({metrics.total_meetings})</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Hourly bar slots */}
+          <div className="grid grid-cols-5 sm:grid-cols-15 gap-1.5 pt-1">
+            {metrics.hourly_activity
+              .filter(p => p.hour >= 9 && p.hour <= 23)
+              .map((point) => {
+                const maxVol = Math.max(...metrics.hourly_activity!.map(x => x.total), 1);
+                const heightPct = point.total > 0 ? Math.max(Math.round((point.total / maxVol) * 100), 22) : 0;
+
+                return (
+                  <div
+                    key={point.hour}
+                    className="flex flex-col items-center group relative cursor-pointer"
+                    title={`${point.label} IST: ${point.total} total (${point.calls} calls, ${point.meetings} meetings)`}
+                  >
+                    <div className="h-12 w-full flex items-end justify-center rounded-lg bg-dark-900/60 p-1 border border-white/[0.04] group-hover:border-white/[0.16] transition">
+                      {point.total > 0 ? (
+                        <div 
+                          className="w-full rounded-sm flex flex-col justify-end overflow-hidden transition-all duration-300"
+                          style={{ height: `${heightPct}%` }}
+                        >
+                          {point.meetings > 0 && (
+                            <div 
+                              className="w-full bg-purple-500/80 hover:bg-purple-400 transition"
+                              style={{ height: `${(point.meetings / point.total) * 100}%` }}
+                            />
+                          )}
+                          {point.calls > 0 && (
+                            <div 
+                              className="w-full bg-sky-500/80 hover:bg-sky-400 transition"
+                              style={{ height: `${(point.calls / point.total) * 100}%` }}
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-full h-1 rounded-full bg-dark-800" />
+                      )}
+                    </div>
+
+                    <span className="text-[10px] font-mono mt-1 text-dark-400 group-hover:text-white transition">
+                      {point.label.slice(0, 2)}h
+                    </span>
+                    <span className="text-[9px] font-mono text-dark-300 font-bold">
+                      {point.total > 0 ? point.total : '-'}
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -80,7 +80,7 @@ describe('Tier 2 Integration Test: Full Replay Contract & REST Lifecycle', () =>
   it('Fetches Manager Brief with verified alerts', async () => {
     const resBrief = await request(app).get('/api/manager-brief').expect(200);
     expect(resBrief.body.date).toBe('2026-08-21');
-    expect(resBrief.body.urgent_alerts.length).toBe(3);
+    expect(resBrief.body.urgent_alerts.length).toBe(4);
     expect(resBrief.body.urgent_alerts[0].citation).toContain('Call C10');
   });
 });

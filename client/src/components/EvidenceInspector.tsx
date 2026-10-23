@@ -203,7 +203,7 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
           <div className="text-dark-300 space-y-1 text-xs">
             <div>• <strong className="text-white">Logged:</strong> <em>{discrepancy.upstream_claim}</em></div>
             <div>• <strong className="text-white">Spoken Reality:</strong> <em>{discrepancy.spoken_reality}</em></div>
-            <div className="text-amber-200/90 pt-1 font-medium">⚠️ {discrepancy.impact_explanation}</div>
+            <div className="text-amber-200/90 pt-1 font-medium">{discrepancy.impact_explanation}</div>
           </div>
         </div>
       )}

@@ -100,14 +100,14 @@ export const TeamScorecard: React.FC<TeamScorecardProps> = ({
                 {/* Coaching Guidance Note */}
                 <div className="text-xs text-dark-300 leading-relaxed pt-1 border-t border-white/[0.04]">
                   {rep.name === 'Arun' && (
-                    <p>High call volume (15 dials). Focus coaching on voicemail message clarity (C04) and StoreHarbor competitive differentiation.</p>
+                    <p>High call volume (15 dials). Focus coaching on pre-call qualification of prospect automation maturity before outreach (C01), and structured voicemail delivery (C04).</p>
                   )}
                   {rep.name === 'Leela' && (
-                    <p>8 dials with mostly automated screening drops (B02, B05, B06, B08, B11, B14, B16, B20). Verify lead list freshness with data ops.</p>
+                    <p>8 dials with automated screening drops (B02, B05, B06, B08, B11, B14, B16, B20). Verify lead list freshness and telephony carrier routing with data ops.</p>
                   )}
                   {rep.name === 'Meera' && (
                     <p className="text-amber-300/90">
-                      Telephony conflict: C06 voice was Ravi. C10 contact Aniket departed Meadowbrick. Cancel phantom follow-ups.
+                      StoreHarbor competitive battlecard focus (C05). Referral governance: forbid name-dropping on C09. C10 contact departed Meadowbrick. (Note: C06 voice was Ravi).
                     </p>
                   )}
                   {rep.name === 'Kiran' && (

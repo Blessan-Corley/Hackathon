@@ -128,7 +128,35 @@ export class MetricsEngine {
       activity_by_person: {
         call_reps: Array.from(repMap.values()).sort((a, b) => b.total_calls - a.total_calls),
         meeting_organizers: Array.from(orgMap.values()).sort((a, b) => b.total_meetings - a.total_meetings)
-      }
+      },
+
+      hourly_activity: (() => {
+        const hourBuckets: Map<number, { hour: number; label: string; calls: number; meetings: number; total: number }> = new Map();
+        for (let h = 8; h <= 23; h++) {
+          const label = `${String(h).padStart(2, '0')}:00`;
+          hourBuckets.set(h, { hour: h, label, calls: 0, meetings: 0, total: 0 });
+        }
+        for (const r of records) {
+          const rawTs = r.source_type === 'call' 
+            ? (r.payload as CallPayload).started_at 
+            : (r.payload as MeetingPayload).starts_at;
+          if (rawTs) {
+            const dt = new Date(rawTs);
+            const kolkataOffsetMs = 5.5 * 60 * 60 * 1000;
+            const localDt = new Date(dt.getTime() + kolkataOffsetMs);
+            const hour = localDt.getUTCHours();
+            let bucket = hourBuckets.get(hour);
+            if (!bucket) {
+              bucket = { hour, label: `${String(hour).padStart(2, '0')}:00`, calls: 0, meetings: 0, total: 0 };
+              hourBuckets.set(hour, bucket);
+            }
+            if (r.source_type === 'call') bucket.calls++;
+            else bucket.meetings++;
+            bucket.total++;
+          }
+        }
+        return Array.from(hourBuckets.values()).sort((a, b) => a.hour - b.hour);
+      })()
     };
   }
 }

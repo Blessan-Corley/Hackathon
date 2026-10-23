@@ -29,8 +29,25 @@ export async function fetchRecord(source_type: string, source_id: string): Promi
   return res.json();
 }
 
-export async function fetchMetrics(): Promise<DashboardMetrics> {
-  const res = await fetch(`${BASE_URL}/metrics`);
+export async function fetchMetrics(params?: {
+  person?: string;
+  source_type?: string;
+  route?: string;
+  review_state?: string;
+  has_transcript?: string;
+  search?: string;
+}): Promise<DashboardMetrics> {
+  const query = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([key, val]) => {
+      if (val && val !== 'all') {
+        query.append(key, val);
+      }
+    });
+  }
+  const queryString = query.toString();
+  const url = queryString ? `${BASE_URL}/metrics?${queryString}` : `${BASE_URL}/metrics`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error('Failed to fetch metrics');
   return res.json();
 }

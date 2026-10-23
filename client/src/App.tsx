@@ -87,16 +87,18 @@ export function App() {
   const loadData = async () => {
     try {
       setLoading(true);
+      const activeFilters = {
+        person: selectedPerson,
+        source_type: selectedSourceType,
+        route: selectedRoute,
+        review_state: selectedReviewState,
+        has_transcript: selectedTranscriptFilter,
+        search: searchQuery
+      };
+
       const [recordsRes, metricsRes] = await Promise.all([
-        fetchRecords({
-          person: selectedPerson,
-          source_type: selectedSourceType,
-          route: selectedRoute,
-          review_state: selectedReviewState,
-          has_transcript: selectedTranscriptFilter,
-          search: searchQuery
-        }),
-        fetchMetrics()
+        fetchRecords(activeFilters),
+        fetchMetrics(activeFilters)
       ]);
 
       setRecords(recordsRes.records);
@@ -308,6 +310,7 @@ export function App() {
         {/* Slide-over Evidence Inspector */}
         {selectedRecord && (
           <EvidenceInspector
+            key={selectedRecord.identity}
             record={selectedRecord}
             onClose={() => setSelectedRecord(null)}
             onUpdateRoute={handleUpdateRoute}

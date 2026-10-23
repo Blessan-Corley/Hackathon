@@ -5,7 +5,67 @@ import archiver from 'archiver';
 import { IngestionEngine } from '../services/IngestionEngine.js';
 import { MetricsEngine } from '../services/MetricsEngine.js';
 import { ExportEngine } from '../services/ExportEngine.js';
-import { IngestionBatch, RouteCategory, ReviewState, SourceType, CallPayload, MeetingPayload } from '../domain/types.js';
+import { ProcessedRecord, IngestionBatch, RouteCategory, ReviewState, SourceType, CallPayload, MeetingPayload } from '../domain/types.js';
+
+export function filterRecordList(records: ProcessedRecord[], query: any): ProcessedRecord[] {
+  let filtered = [...records];
+  const { person, source_type, route, review_state, has_transcript, search } = query;
+
+  if (source_type && source_type !== 'all') {
+    filtered = filtered.filter(r => r.source_type === source_type);
+  }
+
+  if (has_transcript && has_transcript !== 'all') {
+    const wantTranscript = has_transcript === 'true';
+    filtered = filtered.filter(r => r.has_usable_text === wantTranscript);
+  }
+
+  if (review_state && review_state !== 'all') {
+    filtered = filtered.filter(r => r.review_state === review_state);
+  }
+
+  if (route && route !== 'all') {
+    filtered = filtered.filter(r => {
+      const active = r.manual_routes || r.suggested_routes;
+      return active.includes(route as RouteCategory);
+    });
+  }
+
+  if (person && person !== 'all') {
+    const pStr = String(person).toLowerCase();
+    filtered = filtered.filter(r => {
+      if (r.source_type === 'call') {
+        const cp = r.payload as CallPayload;
+        return (
+          (cp.rep_name && cp.rep_name.toLowerCase().includes(pStr)) ||
+          (cp.rep_email && cp.rep_email.toLowerCase().includes(pStr))
+        );
+      }
+      if (r.source_type === 'meeting') {
+        const mp = r.payload as MeetingPayload;
+        return mp.organizer_email && mp.organizer_email.toLowerCase().includes(pStr);
+      }
+      return false;
+    });
+  }
+
+  if (search) {
+    const q = String(search).toLowerCase();
+    filtered = filtered.filter(r => {
+      const headline = r.analysis?.headline?.toLowerCase() || '';
+      const ref = r.record_ref.toLowerCase();
+      let titleOrSummary = '';
+      if (r.source_type === 'meeting') {
+        titleOrSummary = (r.payload as MeetingPayload).title.toLowerCase();
+      } else {
+        titleOrSummary = (r.payload as CallPayload).transcript?.toLowerCase() || '';
+      }
+      return headline.includes(q) || ref.includes(q) || titleOrSummary.includes(q);
+    });
+  }
+
+  return filtered;
+}
 
 export function createApiRouter(
   engine: IngestionEngine,
@@ -202,64 +262,16 @@ export function createApiRouter(
   // --- RECORD QUERY & DETAIL ENDPOINTS ---
 
   router.get('/records', (req: Request, res: Response) => {
-    let records = engine.getAll();
-    const { person, source_type, route, review_state, has_transcript, search } = req.query;
+    let records = filterRecordList(engine.getAll(), req.query);
 
-    if (source_type && source_type !== 'all') {
-      records = records.filter(r => r.source_type === source_type);
-    }
-
-    if (has_transcript && has_transcript !== 'all') {
-      const wantTranscript = has_transcript === 'true';
-      records = records.filter(r => r.has_usable_text === wantTranscript);
-    }
-
-    if (review_state && review_state !== 'all') {
-      records = records.filter(r => r.review_state === review_state);
-    }
-
-    if (route && route !== 'all') {
-      records = records.filter(r => {
-        const active = r.manual_routes || r.suggested_routes;
-        return active.includes(route as RouteCategory);
-      });
-    }
-
-    if (person && person !== 'all') {
-      const pStr = String(person).toLowerCase();
-      records = records.filter(r => {
-        if (r.source_type === 'call') {
-          const cp = r.payload as CallPayload;
-          return (
-            (cp.rep_name && cp.rep_name.toLowerCase().includes(pStr)) ||
-            (cp.rep_email && cp.rep_email.toLowerCase().includes(pStr))
-          );
-        }
-        if (r.source_type === 'meeting') {
-          const mp = r.payload as MeetingPayload;
-          return mp.organizer_email && mp.organizer_email.toLowerCase().includes(pStr);
-        }
-        return false;
-      });
-    }
-
-    if (search) {
-      const q = String(search).toLowerCase();
-      records = records.filter(r => {
-        const headline = r.analysis?.headline?.toLowerCase() || '';
-        const ref = r.record_ref.toLowerCase();
-        let titleOrSummary = '';
-        if (r.source_type === 'meeting') {
-          titleOrSummary = (r.payload as MeetingPayload).title.toLowerCase();
-        } else {
-          titleOrSummary = (r.payload as CallPayload).transcript?.toLowerCase() || '';
-        }
-        return headline.includes(q) || ref.includes(q) || titleOrSummary.includes(q);
-      });
-    }
-
-    // Sort order: M01-M14, C01-C10, B01-B20
-    records.sort((a, b) => a.record_ref.localeCompare(b.record_ref, undefined, { numeric: true }));
+    // Sort order: Meetings first (M01-M14), then evaluated calls (C01-C10), then background screening drops (B01-B20)
+    const typePriority: Record<string, number> = { 'M': 1, 'C': 2, 'B': 3 };
+    records.sort((a, b) => {
+      const prioA = typePriority[a.record_ref.charAt(0)] || 9;
+      const prioB = typePriority[b.record_ref.charAt(0)] || 9;
+      if (prioA !== prioB) return prioA - prioB;
+      return a.record_ref.localeCompare(b.record_ref, undefined, { numeric: true });
+    });
 
     res.json({
       count: records.length,
@@ -284,6 +296,24 @@ export function createApiRouter(
 
     if (!Array.isArray(routes) || routes.length === 0) {
       return res.status(400).json({ error: 'Body must include non-empty routes array.' });
+    }
+
+    const VALID_ROUTES: Set<RouteCategory> = new Set([
+      'deal_next_steps',
+      'sales_coaching',
+      'customer_success',
+      'customer_support',
+      'partnerships',
+      'internal_ops',
+      'intake_exception'
+    ]);
+
+    for (const r of routes) {
+      if (!VALID_ROUTES.has(r)) {
+        return res.status(400).json({ 
+          error: `Invalid route category: "${r}". Must be one of: ${Array.from(VALID_ROUTES).join(', ')}` 
+        });
+      }
     }
 
     try {
@@ -336,21 +366,27 @@ export function createApiRouter(
   // --- METRICS & BRIEF ---
 
   router.get('/metrics', (req: Request, res: Response) => {
-    const metrics = MetricsEngine.calculate(engine.getAll());
+    const filtered = filterRecordList(engine.getAll(), req.query);
+    const metrics = MetricsEngine.calculate(filtered);
     res.json(metrics);
   });
 
   router.get('/manager-brief', (req: Request, res: Response) => {
+    exporter.writeDailyBrief(engine.getAll());
     const briefPath = path.join(exportDir, 'daily_briefs', '2026-08-21_Asia_Kolkata_Manager_Daily_Brief.md');
     let briefContent = '';
     if (fs.existsSync(briefPath)) {
       briefContent = fs.readFileSync(briefPath, 'utf8');
     }
 
+    const allRecords = engine.getAll();
+    const callsCount = allRecords.filter(r => r.source_type === 'call').length;
+    const meetingsCount = allRecords.filter(r => r.source_type === 'meeting').length;
+
     res.json({
       date: '2026-08-21',
       timezone: 'Asia/Kolkata',
-      scope: 'Selected Intake (44 Source Records: 30 Calls, 14 Meetings)',
+      scope: `Selected Intake (${allRecords.length} Source Records: ${callsCount} Calls, ${meetingsCount} Meetings)`,
       content: briefContent,
       urgent_alerts: [
         {
@@ -361,18 +397,25 @@ export function createApiRouter(
           action: 'Cancel all scheduled outreach to Aniket; restart Meadowbrick account prospecting.'
         },
         {
-          id: 'alert-m07',
-          type: 'customer_support_bug',
-          title: 'Software Defect: Payment Description Save Failure (M07)',
-          citation: 'Meeting M07 Turn 2: Customer A shows edited payment description reverting on save.',
-          action: 'File priority Jira defect ticket for engineering; confirm fix to Customer A by 2026-08-22.'
-        },
-        {
           id: 'alert-c06',
           type: 'rep_attribution_error',
           title: 'Spoken Rep Mismatch: Ravi vs Meera (C06)',
           citation: 'Call C06 quote: "Good evening. Ravi here. I\'ll say at the start that this is a cold call."',
           action: 'Re-assign call record to Ravi; do not coach Meera on this interaction.'
+        },
+        {
+          id: 'alert-c09',
+          type: 'restricted_referral',
+          title: 'Restricted Referral: Name-Dropping Forbidden (C09)',
+          citation: 'Call C09 quote: "Would it be all right if I mentioned your name when contacting him? No, please don\'t use my name."',
+          action: 'Reach out to business head Mr. Rishabh without mentioning Vedant.'
+        },
+        {
+          id: 'alert-m07',
+          type: 'customer_support_bug',
+          title: 'Software Defect Escalation: 4 UI & Payment Bugs (M07)',
+          citation: 'Meeting M07 Turn 27: Team member A commits: "I will send the details to the team, get their confirmation and come back to you."',
+          action: 'Report the 4 documented defects to engineering; confirm ETA to Customer A by 2026-08-22.'
         }
       ]
     });

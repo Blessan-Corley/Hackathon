@@ -27,13 +27,18 @@ describe('Tier 1 Unit Test: ExportEngine & Manifest Integrity', () => {
   it('Generates physical files and machine-readable manifests', () => {
     const result = exporter.generateExport(engine.getAll());
 
-    expect(result.manifestEntries.length).toBe(44);
+    expect(result.manifestEntries.length).toBe(45); // 44 records + 1 Manager Daily Brief
     expect(fs.existsSync(result.manifestJsonPath)).toBe(true);
     expect(fs.existsSync(result.manifestCsvPath)).toBe(true);
 
     // Verify manifest JSON contents
     const manifestJson = JSON.parse(fs.readFileSync(result.manifestJsonPath, 'utf8'));
-    expect(manifestJson.length).toBe(44);
+    expect(manifestJson.length).toBe(45);
+
+    // Verify Manager Daily Brief is included in manifest
+    const briefEntry = manifestJson.find((e: any) => e.record_ref === 'BRIEF-DAILY');
+    expect(briefEntry).toBeDefined();
+    expect(briefEntry.output_paths[0]).toContain('daily_briefs');
 
     // Verify all output paths are RELATIVE and exist physically
     for (const entry of manifestJson) {
@@ -59,7 +64,7 @@ describe('Tier 1 Unit Test: ExportEngine & Manifest Integrity', () => {
     const csvContent = fs.readFileSync(result.manifestCsvPath, 'utf8');
     const lines = csvContent.trim().split('\n');
 
-    expect(lines.length).toBe(45); // 1 header + 44 rows
+    expect(lines.length).toBe(46); // 1 header + 45 rows (44 records + 1 Manager Daily Brief)
     expect(lines[0]).toContain('source_type,source_id,record_ref,applied_revision');
   });
 });
