@@ -18,6 +18,7 @@ import {
   ListTodo
 } from 'lucide-react';
 import { ProcessedRecord, RouteCategory, ReviewState, CallPayload, MeetingPayload } from '../types/index.js';
+import { ReviewStateDropdown } from './ReviewStateDropdown.js';
 
 interface EvidenceInspectorProps {
   record: ProcessedRecord;
@@ -27,14 +28,54 @@ interface EvidenceInspectorProps {
   onUpdateReviewState: (state: ReviewState) => Promise<void>;
 }
 
-const AVAILABLE_ROUTES: Array<{ id: RouteCategory; label: string; desc: string }> = [
-  { id: 'deal_next_steps', label: 'Deal Next Steps', desc: 'Active sales opportunity qualification & pipeline movement' },
-  { id: 'sales_coaching', label: 'Sales Coaching', desc: 'Rep development, pitch feedback, and objection handling' },
-  { id: 'customer_success', label: 'Customer Success', desc: 'Account retention, feature adoption, and program migration' },
-  { id: 'customer_support', label: 'Customer Support', desc: 'Technical troubleshooting, bug escalation, and onboarding defects' },
-  { id: 'partnerships', label: 'Partnerships', desc: 'Channel referral partnerships and reseller development' },
-  { id: 'internal_ops', label: 'Internal Operations', desc: 'Internal staff training, vendor contracts, and non-sales admin' },
-  { id: 'intake_exception', label: 'Intake Exception', desc: 'Unattended calls, silent recordings, or cancelled meetings' }
+const AVAILABLE_ROUTES: Array<{ 
+  id: RouteCategory; 
+  label: string; 
+  desc: string;
+  theme: { bg: string; border: string; text: string; boxBg: string; boxBorder: string };
+}> = [
+  { 
+    id: 'deal_next_steps', 
+    label: 'Deal Next Steps', 
+    desc: 'Active sales opportunity qualification & pipeline movement',
+    theme: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/40', text: 'text-emerald-300', boxBg: 'bg-emerald-500', boxBorder: 'border-emerald-400' }
+  },
+  { 
+    id: 'sales_coaching', 
+    label: 'Sales Coaching', 
+    desc: 'Rep development, pitch feedback, and objection handling',
+    theme: { bg: 'bg-amber-500/10', border: 'border-amber-500/40', text: 'text-amber-300', boxBg: 'bg-amber-500', boxBorder: 'border-amber-400' }
+  },
+  { 
+    id: 'customer_success', 
+    label: 'Customer Success', 
+    desc: 'Account retention, feature adoption, and program migration',
+    theme: { bg: 'bg-blue-500/10', border: 'border-blue-500/40', text: 'text-blue-300', boxBg: 'bg-blue-500', boxBorder: 'border-blue-400' }
+  },
+  { 
+    id: 'customer_support', 
+    label: 'Customer Support', 
+    desc: 'Technical troubleshooting, bug escalation, and onboarding defects',
+    theme: { bg: 'bg-purple-500/10', border: 'border-purple-500/40', text: 'text-purple-300', boxBg: 'bg-purple-500', boxBorder: 'border-purple-400' }
+  },
+  { 
+    id: 'partnerships', 
+    label: 'Partnerships', 
+    desc: 'Channel referral partnerships and reseller development',
+    theme: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/40', text: 'text-cyan-300', boxBg: 'bg-cyan-500', boxBorder: 'border-cyan-400' }
+  },
+  { 
+    id: 'internal_ops', 
+    label: 'Internal Operations', 
+    desc: 'Internal staff training, vendor contracts, and non-sales admin',
+    theme: { bg: 'bg-zinc-500/10', border: 'border-zinc-500/40', text: 'text-zinc-300', boxBg: 'bg-zinc-500', boxBorder: 'border-zinc-400' }
+  },
+  { 
+    id: 'intake_exception', 
+    label: 'Intake Exception', 
+    desc: 'Unattended calls, silent recordings, or cancelled meetings',
+    theme: { bg: 'bg-rose-500/10', border: 'border-rose-500/40', text: 'text-rose-300', boxBg: 'bg-rose-500', boxBorder: 'border-rose-400' }
+  }
 ];
 
 export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
@@ -411,17 +452,17 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
                       onClick={() => handleRouteToggle(route.id)}
                       className={`p-3 rounded-xl border cursor-pointer transition flex items-start gap-3 ${
                         isChecked 
-                          ? 'bg-emerald-500/10 border-emerald-500/40 text-white' 
+                          ? `${route.theme.bg} ${route.theme.border} text-white` 
                           : 'bg-dark-900 border-white/[0.06] text-dark-300 hover:border-white/[0.12]'
                       }`}
                     >
                       <div className={`w-4 h-4 rounded-md border mt-0.5 flex items-center justify-center shrink-0 ${
-                        isChecked ? 'bg-emerald-500 border-emerald-400 text-dark-950' : 'border-dark-600'
+                        isChecked ? `${route.theme.boxBg} ${route.theme.boxBorder} text-dark-950` : 'border-dark-600'
                       }`}>
                         {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                       </div>
                       <div>
-                        <div className="font-semibold text-xs text-white">
+                        <div className={`font-semibold text-xs ${isChecked ? route.theme.text : 'text-white'}`}>
                           {route.label}
                         </div>
                         <div className="text-[11px] text-dark-400 mt-0.5">
@@ -486,34 +527,17 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
 
       {/* Footer Status Bar */}
       <div className="p-4 border-t border-white/[0.08] bg-dark-850/80 backdrop-blur flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-dark-400">Review:</span>
-          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
-            record.review_state === 'reviewed' 
-              ? 'bg-emerald-500/15 text-emerald-300' 
-              : 'bg-amber-500/15 text-amber-300'
-          }`}>
-            {record.review_state}
-          </span>
+        <div className="flex items-center gap-2.5">
+          <span className="text-dark-400 font-medium">Review Status:</span>
+          <ReviewStateDropdown
+            value={record.review_state}
+            onChange={(st) => onUpdateReviewState(st)}
+            isLastFewRows={true}
+          />
         </div>
 
-        <div className="flex items-center gap-2">
-          {record.review_state !== 'reviewed' ? (
-            <button
-              onClick={() => onUpdateReviewState('reviewed')}
-              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow"
-            >
-              <Check className="w-3.5 h-3.5" />
-              Mark as Reviewed
-            </button>
-          ) : (
-            <button
-              onClick={() => onUpdateReviewState('unreviewed')}
-              className="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-750 text-dark-300 text-xs transition"
-            >
-              Reopen
-            </button>
-          )}
+        <div className="text-[11px] text-dark-400 font-mono">
+          Last Synced: 21 Aug 2026
         </div>
       </div>
 

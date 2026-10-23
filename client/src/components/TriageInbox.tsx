@@ -47,7 +47,7 @@ export const TriageInbox: React.FC<TriageInboxProps> = ({
   }
 
   return (
-    <div className="glass-card rounded-2xl shadow-xl">
+    <div className="glass-card rounded-2xl shadow-xl relative z-10">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
