@@ -7,24 +7,24 @@ export default {
   theme: {
     extend: {
       colors: {
-        obsidian: {
-          950: '#070A0F',
-          900: '#0B0F17',
-          850: '#101622',
-          800: '#151D2C',
-          700: '#1E293B',
-          600: '#334155',
-          500: '#475569',
-          400: '#64748B',
-          300: '#94A3B8',
-          200: '#CBD5E1',
-          100: '#E2E8F0',
-          50: '#F8FAFC'
+        dark: {
+          950: '#07080C',
+          900: '#0C0E14',
+          850: '#12151E',
+          800: '#181D2A',
+          750: '#202636',
+          700: '#2A3346',
+          600: '#3D4860',
+          500: '#5A6680',
+          400: '#8593AD',
+          300: '#B0BCDB',
+          200: '#D5DCF0',
+          100: '#EEF2FC'
         }
       },
       fontFamily: {
-        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
       }
     },
   },

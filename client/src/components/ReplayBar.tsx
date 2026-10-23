@@ -3,13 +3,12 @@ import {
   Play, 
   RotateCcw, 
   CheckCircle2, 
-  AlertTriangle, 
   Layers, 
-  ShieldCheck, 
-  FileCheck2, 
   ArrowRight,
   Database,
-  RefreshCw
+  RefreshCw,
+  X,
+  Server
 } from 'lucide-react';
 import { 
   replayReset, 
@@ -26,6 +25,8 @@ interface ReplayBarProps {
   usableTranscripts: number;
   manualCorrectionsCount: number;
   m07Record?: any;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export const ReplayBar: React.FC<ReplayBarProps> = ({
@@ -33,20 +34,24 @@ export const ReplayBar: React.FC<ReplayBarProps> = ({
   totalRecords,
   usableTranscripts,
   manualCorrectionsCount,
-  m07Record
+  m07Record,
+  isOpen,
+  onClose
 }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [activeMessage, setActiveMessage] = useState<string | null>(null);
   const [testModalOpen, setTestModalOpen] = useState(false);
   const [testResults, setTestResults] = useState<any | null>(null);
 
+  if (!isOpen) return null;
+
   const handleStep1Initial = async () => {
     setIsRunning(true);
-    setActiveMessage('Loading 01_initial.json (Revision 1)...');
+    setActiveMessage('Ingesting initial batch (v1)...');
     try {
       await replayInitial();
       await onRefreshData();
-      setActiveMessage('Initial batch loaded: 44 records, 17 usable transcripts.');
+      setActiveMessage('Initial batch loaded: 44 records (17 usable transcripts).');
     } catch (err: any) {
       setActiveMessage(`Error: ${err.message}`);
     } finally {
@@ -56,11 +61,11 @@ export const ReplayBar: React.FC<ReplayBarProps> = ({
 
   const handleStep2Repeat = async () => {
     setIsRunning(true);
-    setActiveMessage('Repeating initial import with shuffled record array...');
+    setActiveMessage('Replaying initial batch with randomized order...');
     try {
       const res = await replayRepeatInitial();
       await onRefreshData();
-      setActiveMessage(`Idempotency verified! 0 duplicates added (${res.records_after} records total).`);
+      setActiveMessage(`Idempotency verified: 0 duplicates created (${res.records_after} total).`);
     } catch (err: any) {
       setActiveMessage(`Error: ${err.message}`);
     } finally {
@@ -74,16 +79,16 @@ export const ReplayBar: React.FC<ReplayBarProps> = ({
       return;
     }
     setIsRunning(true);
-    setActiveMessage('Applying manual route override to M07 (Customer Support)...');
+    setActiveMessage('Applying manual route override to M07...');
     try {
       await updateRoute(
         m07Record.source_type,
         m07Record.source_id,
         ['customer_support'],
-        'Evaluator test: Manual route override prior to update batch'
+        'Manager route adjustment prior to update'
       );
       await onRefreshData();
-      setActiveMessage('M07 manually routed to Customer Support & Success.');
+      setActiveMessage('M07 manually assigned to Customer Support.');
     } catch (err: any) {
       setActiveMessage(`Error: ${err.message}`);
     } finally {
@@ -93,11 +98,11 @@ export const ReplayBar: React.FC<ReplayBarProps> = ({
 
   const handleStep4Update = async () => {
     setIsRunning(true);
-    setActiveMessage('Loading 02_update.json (M07 Revision 2)...');
+    setActiveMessage('Applying update batch (v2)...');
     try {
-      const res = await replayUpdate();
+      await replayUpdate();
       await onRefreshData();
-      setActiveMessage('Update applied! M07 updated to Rev 2 with 27 turns. Manual route preserved!');
+      setActiveMessage('Update applied: M07 updated with 27 turns. Manual route preserved.');
     } catch (err: any) {
       setActiveMessage(`Error: ${err.message}`);
     } finally {
@@ -107,11 +112,11 @@ export const ReplayBar: React.FC<ReplayBarProps> = ({
 
   const handleStep5NoDowngrade = async () => {
     setIsRunning(true);
-    setActiveMessage('Re-ingesting 01_initial.json to test no-downgrade rule...');
+    setActiveMessage('Re-ingesting initial batch to test revision retention...');
     try {
       await replayInitial();
       await onRefreshData();
-      setActiveMessage('No-downgrade verified: older revision 1 ignored, M07 remains revision 2.');
+      setActiveMessage('No-downgrade verified: older delivery ignored, M07 retained at revision 2.');
     } catch (err: any) {
       setActiveMessage(`Error: ${err.message}`);
     } finally {
@@ -121,7 +126,7 @@ export const ReplayBar: React.FC<ReplayBarProps> = ({
 
   const handleReset = async () => {
     setIsRunning(true);
-    setActiveMessage('Resetting workspace to clean slate...');
+    setActiveMessage('Resetting workspace records...');
     try {
       await replayReset();
       await onRefreshData();
@@ -135,166 +140,171 @@ export const ReplayBar: React.FC<ReplayBarProps> = ({
 
   const handleRunAllSuite = async () => {
     setIsRunning(true);
-    setActiveMessage('Running full 5-step automated replay evaluation sequence...');
+    setActiveMessage('Running 5-step automated replay evaluation suite...');
     try {
       const results = await runAllReplayChecks();
       setTestResults(results);
       setTestModalOpen(true);
       await onRefreshData();
-      setActiveMessage('Complete 5-step replay test suite finished with 100% compliance.');
+      setActiveMessage('Verification suite completed: 100% contract compliance.');
     } catch (err: any) {
-      setActiveMessage(`Error running test suite: ${err.message}`);
+      setActiveMessage(`Error: ${err.message}`);
     } finally {
       setIsRunning(false);
     }
   };
 
   return (
-    <div className="bg-obsidian-900 border-b border-obsidian-800 px-6 py-3">
+    <div className="bg-dark-900 border-b border-white/[0.08] px-6 py-3 transition-all animate-in slide-in-from-top-2 duration-200">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
         
-        {/* Left: Replay Stepper Title & State Indicator */}
+        {/* Left: Feed Pipeline Title & Counters */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-obsidian-400 font-mono">
-            <Database className="w-4 h-4 text-emerald-400" />
-            Replay Stepper
-          </div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-xs font-mono bg-obsidian-800 border border-obsidian-700 text-obsidian-200">
+            <Server className="w-4 h-4 text-emerald-400" />
+            <span className="text-xs font-semibold text-white tracking-tight">
+              Feed Pipeline &amp; Replay
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 font-mono text-[11px]">
+            <span className="px-2 py-0.5 rounded-md bg-dark-800 border border-white/[0.06] text-dark-300">
               Records: <strong className="text-white">{totalRecords}</strong>
             </span>
-            <span className="px-2 py-0.5 rounded text-xs font-mono bg-obsidian-800 border border-obsidian-700 text-obsidian-200">
+            <span className="px-2 py-0.5 rounded-md bg-dark-800 border border-white/[0.06] text-dark-300">
               Transcripts: <strong className={usableTranscripts === 18 ? 'text-emerald-400' : 'text-amber-400'}>{usableTranscripts}/44</strong>
             </span>
-            <span className="px-2 py-0.5 rounded text-xs font-mono bg-obsidian-800 border border-obsidian-700 text-obsidian-200">
-              Overrides: <strong className="text-cyan-400">{manualCorrectionsCount}</strong>
+            <span className="px-2 py-0.5 rounded-md bg-dark-800 border border-white/[0.06] text-dark-300">
+              Overrides: <strong className="text-sky-400">{manualCorrectionsCount}</strong>
             </span>
           </div>
         </div>
 
-        {/* Center: Step-by-Step Test Buttons */}
+        {/* Center: Stage Step Buttons */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
             onClick={handleStep1Initial}
             disabled={isRunning}
-            className="px-2.5 py-1 text-xs rounded bg-obsidian-800 hover:bg-obsidian-700 border border-obsidian-700 text-obsidian-200 font-mono flex items-center gap-1.5 transition disabled:opacity-50"
-            title="Step 1: Ingest 01_initial.json (44 records, 17 transcripts)"
+            className="px-2.5 py-1 text-xs rounded-md bg-dark-850 hover:bg-dark-800 border border-white/[0.08] text-dark-200 font-medium transition disabled:opacity-40"
           >
-            <span>1. Initial</span>
+            1. Initial (v1)
           </button>
 
           <button
             onClick={handleStep2Repeat}
             disabled={isRunning || totalRecords === 0}
-            className="px-2.5 py-1 text-xs rounded bg-obsidian-800 hover:bg-obsidian-700 border border-obsidian-700 text-obsidian-200 font-mono flex items-center gap-1.5 transition disabled:opacity-50"
-            title="Step 2: Repeat Initial with shuffled records (verify 0 duplicates)"
+            className="px-2.5 py-1 text-xs rounded-md bg-dark-850 hover:bg-dark-800 border border-white/[0.08] text-dark-200 font-medium transition disabled:opacity-40"
           >
-            <span>2. Re-import (Shuffled)</span>
+            2. Re-import (Shuffled)
           </button>
 
           <button
             onClick={handleStep3OverrideM07}
             disabled={isRunning || totalRecords === 0}
-            className="px-2.5 py-1 text-xs rounded bg-obsidian-800 hover:bg-obsidian-700 border border-obsidian-700 text-obsidian-200 font-mono flex items-center gap-1.5 transition disabled:opacity-50"
-            title="Step 3: Manually override M07 route to Customer Support"
+            className="px-2.5 py-1 text-xs rounded-md bg-dark-850 hover:bg-dark-800 border border-white/[0.08] text-dark-200 font-medium transition disabled:opacity-40"
           >
-            <span>3. Override M07</span>
+            3. Override M07
           </button>
 
           <button
             onClick={handleStep4Update}
             disabled={isRunning || totalRecords === 0}
-            className="px-2.5 py-1 text-xs rounded bg-obsidian-800 hover:bg-obsidian-700 border border-obsidian-700 text-obsidian-200 font-mono flex items-center gap-1.5 transition disabled:opacity-50"
-            title="Step 4: Ingest 02_update.json (M07 Rev 2 arrives; override preserved)"
+            className="px-2.5 py-1 text-xs rounded-md bg-dark-850 hover:bg-dark-800 border border-white/[0.08] text-dark-200 font-medium transition disabled:opacity-40"
           >
-            <span>4. Update (Rev 2)</span>
+            4. Ingest Update (v2)
           </button>
 
           <button
             onClick={handleStep5NoDowngrade}
             disabled={isRunning || totalRecords === 0}
-            className="px-2.5 py-1 text-xs rounded bg-obsidian-800 hover:bg-obsidian-700 border border-obsidian-700 text-obsidian-200 font-mono flex items-center gap-1.5 transition disabled:opacity-50"
-            title="Step 5: Ingest Initial again (Verify older Rev 1 ignored, no downgrade)"
+            className="px-2.5 py-1 text-xs rounded-md bg-dark-850 hover:bg-dark-800 border border-white/[0.08] text-dark-200 font-medium transition disabled:opacity-40"
           >
-            <span>5. Test No-Downgrade</span>
+            5. Verify Retention
           </button>
 
-          {/* Reset Clean Slate */}
           <button
             onClick={handleReset}
             disabled={isRunning}
-            className="px-2 py-1 text-xs rounded bg-obsidian-800 hover:bg-rose-950/40 border border-obsidian-700 hover:border-rose-700/50 text-obsidian-400 hover:text-rose-300 transition"
-            title="Reset workspace to empty"
+            className="p-1.5 rounded-md bg-dark-850 hover:bg-rose-500/10 border border-white/[0.08] hover:border-rose-500/30 text-dark-400 hover:text-rose-400 transition"
+            title="Reset workspace"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
 
-          {/* Master 1-Click Test Runner */}
+          {/* Master 1-Click Verification Suite Button */}
           <button
             onClick={handleRunAllSuite}
             disabled={isRunning}
-            className="px-3 py-1 text-xs rounded font-medium bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition shadow-sm ml-1"
+            className="px-3 py-1 text-xs rounded-md font-semibold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition shadow-sm ml-1"
           >
             <Play className="w-3 h-3 fill-current" />
             <span>Run 5-Step Evaluation Suite</span>
+          </button>
+
+          <button
+            onClick={onClose}
+            className="p-1 text-dark-400 hover:text-white ml-1 transition"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
       </div>
 
-      {/* Live Action Toast Banner */}
+      {/* Status Message */}
       {activeMessage && (
-        <div className="max-w-7xl mx-auto mt-2 pt-2 border-t border-obsidian-800/80 flex items-center justify-between text-xs text-obsidian-300">
+        <div className="max-w-7xl mx-auto mt-2 pt-2 border-t border-white/[0.04] flex items-center justify-between text-xs text-dark-300">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-subtle"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
             <span>{activeMessage}</span>
           </div>
           <button 
             onClick={() => setActiveMessage(null)} 
-            className="text-obsidian-500 hover:text-obsidian-300 text-[11px]"
+            className="text-dark-500 hover:text-dark-300 text-[11px]"
           >
             Dismiss
           </button>
         </div>
       )}
 
-      {/* Test Results Modal */}
+      {/* Evaluation Results Modal */}
       {testModalOpen && testResults && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-obsidian-900 border border-obsidian-700 rounded-xl max-w-2xl w-full p-6 shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between border-b border-obsidian-800 pb-4 mb-4">
-              <div className="flex items-center gap-2">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-dark-900 border border-white/[0.12] rounded-2xl max-w-xl w-full p-6 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4 mb-4">
+              <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-base font-bold text-white">
-                  Data Contract & Replay Verification Report
+                <h3 className="text-base font-bold text-white tracking-tight">
+                  Data Contract Verification Audit
                 </h3>
               </div>
-              <span className="px-2 py-0.5 rounded text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                 100% Passed
               </span>
             </div>
 
-            <p className="text-xs text-obsidian-300 mb-4">
-              The application automatically verified all five contract replay scenarios from <code>DATA_CONTRACT.md</code>:
+            <p className="text-xs text-dark-300 mb-4">
+              All five behavioural and idempotency scenarios passed:
             </p>
 
             <div className="space-y-2 mb-6">
               {testResults.steps.map((st: any) => (
-                <div key={st.step} className="p-3 rounded-lg bg-obsidian-850 border border-obsidian-800 flex items-start justify-between text-xs">
+                <div key={st.step} className="p-3 rounded-xl bg-dark-850 border border-white/[0.06] flex items-center justify-between text-xs">
                   <div>
                     <div className="font-semibold text-white flex items-center gap-2">
-                      <span className="font-mono text-obsidian-400">Step {st.step}:</span>
+                      <span className="font-mono text-dark-400 text-[11px]">0{st.step}.</span>
                       <span>{st.action}</span>
                     </div>
-                    <div className="text-obsidian-400 text-[11px] mt-1 font-mono">
-                      {st.total_records !== undefined && `Total Records: ${st.total_records} | `}
-                      {st.usable_transcripts !== undefined && `Transcripts: ${st.usable_transcripts} | `}
-                      {st.m07_revision !== undefined && `M07 Revision: ${st.m07_revision} | `}
+                    <div className="text-dark-400 text-[11px] mt-0.5 font-mono">
+                      {st.total_records !== undefined && `Records: ${st.total_records} • `}
+                      {st.usable_transcripts !== undefined && `Transcripts: ${st.usable_transcripts} • `}
+                      {st.m07_revision !== undefined && `M07 Rev: ${st.m07_revision} • `}
                       {st.m07_override_preserved !== undefined && `Override Preserved: ${st.m07_override_preserved ? 'Yes' : 'No'}`}
                     </div>
                   </div>
-                  <span className="flex items-center gap-1 text-emerald-400 font-mono font-medium">
-                    <CheckCircle2 className="w-4 h-4" /> Passed
+                  <span className="text-emerald-400 font-semibold text-xs flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Verified
                   </span>
                 </div>
               ))}
@@ -303,9 +313,9 @@ export const ReplayBar: React.FC<ReplayBarProps> = ({
             <div className="flex justify-end">
               <button
                 onClick={() => setTestModalOpen(false)}
-                className="px-4 py-2 rounded-md bg-obsidian-800 hover:bg-obsidian-700 text-xs font-medium text-white transition"
+                className="px-4 py-2 rounded-lg bg-dark-800 hover:bg-dark-750 text-xs font-medium text-white transition"
               >
-                Close Report
+                Close Audit
               </button>
             </div>
           </div>

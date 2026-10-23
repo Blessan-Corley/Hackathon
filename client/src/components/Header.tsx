@@ -1,86 +1,104 @@
 import React from 'react';
-import { ShieldCheck, FileSpreadsheet, FileText, Award, RefreshCw, Calendar, MapPin } from 'lucide-react';
+import { 
+  Sparkles, 
+  FileText, 
+  Download, 
+  SlidersHorizontal, 
+  Layers, 
+  Calendar, 
+  MapPin, 
+  BellRing,
+  ArrowUpRight
+} from 'lucide-react';
 
 interface HeaderProps {
   onOpenBrief: () => void;
   onOpenExport: () => void;
-  onOpenRubric: () => void;
+  onOpenSyncDrawer: () => void;
+  isSyncOpen: boolean;
   discrepanciesCount: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   onOpenBrief,
   onOpenExport,
-  onOpenRubric,
+  onOpenSyncDrawer,
+  isSyncOpen,
   discrepanciesCount
 }) => {
   return (
-    <header className="border-b border-obsidian-800 bg-obsidian-900/90 backdrop-blur sticky top-0 z-30 px-6 py-4">
+    <header className="border-b border-white/[0.08] bg-dark-900/80 backdrop-blur-md sticky top-0 z-30 px-6 py-3.5 transition-all">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         
-        {/* Brand and Context */}
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono font-bold text-lg shadow-sm">
-            SN
+        {/* Brand & Context */}
+        <div className="flex items-center gap-3.5">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 p-[1px] shadow-lg shadow-emerald-500/10">
+            <div className="h-full w-full bg-dark-950 rounded-[11px] flex items-center justify-center">
+              <span className="text-emerald-400 font-bold text-sm tracking-tighter">SN</span>
+            </div>
           </div>
+
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                SpendNest Revenue Intelligence
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-base font-bold text-white tracking-tight">
+                SpendNest
               </h1>
-              <span className="px-2 py-0.5 rounded text-xs font-mono bg-obsidian-800 border border-obsidian-700 text-obsidian-300">
-                v1.0-eval
+              <span className="text-xs font-medium text-dark-400">/</span>
+              <span className="text-xs font-medium text-dark-300 tracking-normal">
+                Revenue Intelligence
               </span>
             </div>
-            <div className="flex items-center gap-3 text-xs text-obsidian-400 mt-0.5">
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-obsidian-400" />
-                21 August 2026
+            
+            <div className="flex items-center gap-2 text-[11px] text-dark-400 mt-0.5 font-medium">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Friday, August 21, 2026
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1 font-mono">
-                <MapPin className="w-3.5 h-3.5 text-obsidian-400" />
-                Asia/Kolkata
-              </span>
-              <span>•</span>
-              <span className="text-emerald-400/90 font-medium">Selected Intake (44 Records)</span>
+              <span className="text-dark-400">Asia/Kolkata</span>
             </div>
           </div>
         </div>
 
-        {/* Global Action Modals */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Manager Daily Brief Button */}
+        {/* Action Controls */}
+        <div className="flex items-center gap-2">
+          
+          {/* Daily Briefing Button */}
           <button
             onClick={onOpenBrief}
-            className="px-3.5 py-1.5 rounded-md bg-obsidian-800 hover:bg-obsidian-700 border border-obsidian-700 text-xs font-medium text-white flex items-center gap-2 transition shadow-sm relative"
+            className="px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 border border-white/[0.08] hover:border-white/[0.14] text-xs font-medium text-dark-200 hover:text-white flex items-center gap-2 transition shadow-sm relative"
           >
             <FileText className="w-3.5 h-3.5 text-emerald-400" />
-            Manager Daily Brief
+            <span>Daily Briefing</span>
             {discrepanciesCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-mono border border-amber-500/30">
-                {discrepanciesCount} Alerts
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-semibold border border-amber-500/30">
+                {discrepanciesCount}
               </span>
             )}
           </button>
 
-          {/* Export & Manifest Hub */}
+          {/* Export Dossiers */}
           <button
             onClick={onOpenExport}
-            className="px-3.5 py-1.5 rounded-md bg-obsidian-800 hover:bg-obsidian-700 border border-obsidian-700 text-xs font-medium text-white flex items-center gap-2 transition shadow-sm"
+            className="px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 border border-white/[0.08] hover:border-white/[0.14] text-xs font-medium text-dark-200 hover:text-white flex items-center gap-2 transition shadow-sm"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-cyan-400" />
-            Exports & Manifest
+            <Download className="w-3.5 h-3.5 text-sky-400" />
+            <span>Export Hub</span>
           </button>
 
-          {/* Rubric & Decision Defense */}
+          {/* Data Connector & Replay Toggle */}
           <button
-            onClick={onOpenRubric}
-            className="px-3.5 py-1.5 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-medium text-emerald-300 flex items-center gap-2 transition shadow-sm"
+            onClick={onOpenSyncDrawer}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition shadow-sm border ${
+              isSyncOpen 
+                ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' 
+                : 'bg-dark-850 hover:bg-dark-800 border-white/[0.08] text-dark-200 hover:text-white'
+            }`}
           >
-            <Award className="w-3.5 h-3.5 text-emerald-400" />
-            Evaluator Defense & Findings
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Sync &amp; Replay Feeds</span>
           </button>
+
         </div>
 
       </div>

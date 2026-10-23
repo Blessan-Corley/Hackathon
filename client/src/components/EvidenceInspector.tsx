@@ -5,8 +5,6 @@ import {
   CheckCircle2, 
   RotateCcw, 
   FileText, 
-  ShieldCheck, 
-  ExternalLink,
   Clock, 
   Tag, 
   Quote, 
@@ -15,9 +13,11 @@ import {
   User,
   Check,
   Building,
-  Info
+  Info,
+  ArrowRight,
+  ListTodo
 } from 'lucide-react';
-import { ProcessedRecord, RouteCategory, ReviewState, CallPayload, MeetingPayload, MeetingTurn } from '../types/index.js';
+import { ProcessedRecord, RouteCategory, ReviewState, CallPayload, MeetingPayload } from '../types/index.js';
 
 interface EvidenceInspectorProps {
   record: ProcessedRecord;
@@ -47,7 +47,6 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
   const [activeTab, setActiveTab] = useState<'analysis' | 'transcript' | 'routing'>('analysis');
   const [highlightedTurn, setHighlightedTurn] = useState<number | null>(null);
 
-  // Manual route state
   const activeRoutes = record.manual_routes || record.suggested_routes;
   const [selectedRoutes, setSelectedRoutes] = useState<RouteCategory[]>(activeRoutes);
   const [overrideReason, setOverrideReason] = useState<string>(record.manual_override_reason || '');
@@ -75,7 +74,7 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
     setSaveSuccessMsg(null);
     try {
       await onUpdateRoute(selectedRoutes, overrideReason);
-      setSaveSuccessMsg('Manual route saved and preserved in state.');
+      setSaveSuccessMsg('Manual route saved.');
       setTimeout(() => setSaveSuccessMsg(null), 3000);
     } finally {
       setIsSavingRoute(false);
@@ -88,7 +87,7 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
       await onResetRoute();
       setSelectedRoutes(record.suggested_routes);
       setOverrideReason('');
-      setSaveSuccessMsg('Restored automated suggested route.');
+      setSaveSuccessMsg('Restored automated recommendation.');
       setTimeout(() => setSaveSuccessMsg(null), 3000);
     } finally {
       setIsSavingRoute(false);
@@ -99,7 +98,6 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
     if (turnNumber) {
       setHighlightedTurn(turnNumber);
       setActiveTab('transcript');
-      // Scroll to turn element
       setTimeout(() => {
         const el = document.getElementById(`turn-${turnNumber}`);
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -110,36 +108,36 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-obsidian-900 border-l border-obsidian-750 shadow-2xl z-40 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+    <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-dark-900 border-l border-white/[0.1] shadow-2xl z-40 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
       
       {/* Header Bar */}
-      <div className="p-4 border-b border-obsidian-800 bg-obsidian-850/80 backdrop-blur flex items-start justify-between gap-3">
+      <div className="p-5 border-b border-white/[0.08] bg-dark-850/60 backdrop-blur flex items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className={`px-2 py-0.5 rounded font-mono text-xs font-bold border ${
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <span className={`px-2 py-0.5 rounded-md font-mono text-xs font-bold border ${
               record.record_ref.startsWith('M') 
                 ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300' 
-                : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'
+                : 'bg-sky-500/10 border-sky-500/30 text-sky-300'
             }`}>
               {record.record_ref}
             </span>
-            <span className="px-2 py-0.5 rounded text-xs font-mono bg-obsidian-800 border border-obsidian-700 text-obsidian-300">
-              Identity: <strong className="text-white">({record.source_type}, {record.source_id.substring(0, 8)}...)</strong>
+            <span className="text-xs text-dark-400 font-mono">
+              Identity: <strong className="text-dark-200">({record.source_type}, {record.source_id.substring(0, 8)})</strong>
             </span>
-            <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-purple-500/10 border border-purple-500/20 text-purple-300">
-              Rev {record.current_revision} ({record.last_batch_id})
+            <span className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-dark-800 text-dark-300 border border-white/[0.06]">
+              Rev {record.current_revision}
             </span>
           </div>
 
-          <h3 className="text-base font-bold text-white line-clamp-1">
+          <h3 className="text-lg font-bold text-white tracking-tight leading-snug">
             {record.analysis?.headline || meetingPayload?.title || 'Interaction Detail'}
           </h3>
 
-          <div className="flex items-center gap-2 text-xs text-obsidian-400 font-mono mt-1">
+          <div className="flex items-center gap-3 text-xs text-dark-400 mt-1 font-medium">
             {isCall ? (
-              <span>Rep: <strong className="text-obsidian-200">{callPayload?.rep_name || callPayload?.rep_email}</strong></span>
+              <span>Rep: <strong className="text-dark-200">{callPayload?.rep_name || callPayload?.rep_email}</strong></span>
             ) : (
-              <span>Organizer: <strong className="text-obsidian-200">{meetingPayload?.organizer_email}</strong></span>
+              <span>Host: <strong className="text-dark-200">{meetingPayload?.organizer_email}</strong></span>
             )}
             <span>•</span>
             <span>Duration: {record.payload.duration_seconds}s</span>
@@ -148,45 +146,45 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
 
         <button
           onClick={onClose}
-          className="p-1 rounded-md text-obsidian-400 hover:text-white hover:bg-obsidian-800 transition"
+          className="p-1.5 rounded-lg text-dark-400 hover:text-white hover:bg-dark-800 transition"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
-      {/* Discrepancy Alert Banner */}
+      {/* Discrepancy Callout */}
       {discrepancy && (
-        <div className="p-3 mx-4 mt-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs">
+        <div className="p-3.5 mx-5 mt-4 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs">
           <div className="flex items-center gap-2 font-bold text-amber-300 mb-1">
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>Upstream Discrepancy Alert: {discrepancy.field}</span>
+            <span>Telemetry Discrepancy: {discrepancy.field}</span>
           </div>
-          <div className="text-obsidian-300 space-y-1 text-[11px]">
-            <div>• <strong className="text-obsidian-100">Metadata Claimed:</strong> <em>{discrepancy.upstream_claim}</em></div>
-            <div>• <strong className="text-obsidian-100">Spoken Reality:</strong> <em>{discrepancy.spoken_reality}</em></div>
-            <div className="text-amber-200/90 pt-0.5">⚠️ {discrepancy.impact_explanation}</div>
+          <div className="text-dark-300 space-y-1 text-xs">
+            <div>• <strong className="text-white">Logged:</strong> <em>{discrepancy.upstream_claim}</em></div>
+            <div>• <strong className="text-white">Spoken Reality:</strong> <em>{discrepancy.spoken_reality}</em></div>
+            <div className="text-amber-200/90 pt-1 font-medium">⚠️ {discrepancy.impact_explanation}</div>
           </div>
         </div>
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-obsidian-800 bg-obsidian-850/50 px-4 mt-3">
+      <div className="flex border-b border-white/[0.06] bg-dark-850/40 px-5 mt-4">
         <button
           onClick={() => setActiveTab('analysis')}
-          className={`px-4 py-2 text-xs font-medium border-b-2 transition ${
+          className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition ${
             activeTab === 'analysis'
               ? 'border-emerald-500 text-emerald-400'
-              : 'border-transparent text-obsidian-400 hover:text-obsidian-200'
+              : 'border-transparent text-dark-400 hover:text-dark-200'
           }`}
         >
           Analysis &amp; Intelligence
         </button>
         <button
           onClick={() => setActiveTab('transcript')}
-          className={`px-4 py-2 text-xs font-medium border-b-2 transition flex items-center gap-1.5 ${
+          className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${
             activeTab === 'transcript'
               ? 'border-emerald-500 text-emerald-400'
-              : 'border-transparent text-obsidian-400 hover:text-obsidian-200'
+              : 'border-transparent text-dark-400 hover:text-dark-200'
           }`}
         >
           <span>Evidence &amp; Transcript</span>
@@ -196,110 +194,99 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('routing')}
-          className={`px-4 py-2 text-xs font-medium border-b-2 transition flex items-center gap-1.5 ${
+          className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${
             activeTab === 'routing'
               ? 'border-emerald-500 text-emerald-400'
-              : 'border-transparent text-obsidian-400 hover:text-obsidian-200'
+              : 'border-transparent text-dark-400 hover:text-dark-200'
           }`}
         >
           <span>Routing &amp; Governance</span>
           {record.is_manually_corrected && (
-            <span className="px-1 py-0.2 rounded text-[10px] bg-cyan-500/20 text-cyan-300 font-mono">Manual</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-sky-500/15 text-sky-300 font-semibold">Manual</span>
           )}
         </button>
       </div>
 
       {/* Tab Content Body */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-5 space-y-5">
         
-        {/* --- TAB 1: ANALYSIS & INTELLIGENCE --- */}
+        {/* --- TAB 1: INTELLIGENCE BRIEF --- */}
         {activeTab === 'analysis' && (
           <div className="space-y-4 text-xs">
             
-            {/* What Happened */}
-            <div className="p-3.5 rounded-lg bg-obsidian-850 border border-obsidian-800 space-y-1.5">
-              <h4 className="font-bold text-white uppercase tracking-wider text-[11px] font-mono text-emerald-400">
-                1. What Happened
-              </h4>
-              <p className="text-obsidian-200 leading-relaxed">
+            {/* Executive Takeaway */}
+            <div className="glass-card rounded-xl p-4 space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                Executive Takeaway
+              </span>
+              <p className="text-sm font-medium text-white leading-relaxed">
                 {record.analysis.what_happened}
               </p>
             </div>
 
-            {/* Why It Matters */}
-            <div className="p-3.5 rounded-lg bg-obsidian-850 border border-obsidian-800 space-y-1.5">
-              <h4 className="font-bold text-white uppercase tracking-wider text-[11px] font-mono text-cyan-400">
-                2. Why It Matters to Management
-              </h4>
-              <p className="text-obsidian-200 leading-relaxed">
+            {/* Strategic Impact */}
+            <div className="glass-card rounded-xl p-4 space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400">
+                Managerial Significance
+              </span>
+              <p className="text-xs text-dark-200 leading-relaxed">
                 {record.analysis.why_it_matters}
               </p>
             </div>
 
             {/* Supporting Evidence Citations */}
-            <div className="p-3.5 rounded-lg bg-obsidian-850 border border-obsidian-800 space-y-2">
-              <h4 className="font-bold text-white uppercase tracking-wider text-[11px] font-mono text-indigo-400">
-                3. Supporting Evidence Passages
-              </h4>
+            <div className="glass-card rounded-xl p-4 space-y-2.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">
+                Verified Evidence Passages
+              </span>
               {record.analysis.evidence_citations.length === 0 ? (
-                <p className="text-obsidian-400 italic">No usable text supplied; substantive claims withheld.</p>
+                <p className="text-dark-400 italic">No usable speech recorded. Claims withheld.</p>
               ) : (
                 <div className="space-y-2">
                   {record.analysis.evidence_citations.map((cite) => (
                     <div 
                       key={cite.id}
                       onClick={() => handleJumpToCitation(cite.turn_number)}
-                      className="p-2.5 rounded bg-obsidian-900 border border-obsidian-750 hover:border-emerald-500/50 cursor-pointer transition group"
+                      className="p-3 rounded-lg bg-dark-900 border border-white/[0.08] hover:border-emerald-500/40 cursor-pointer transition group"
                     >
-                      <div className="flex items-center justify-between font-mono text-[11px] text-emerald-400 mb-1">
+                      <div className="flex items-center justify-between text-xs font-semibold text-emerald-400 mb-1">
                         <span>{cite.reference} {cite.speaker ? `(${cite.speaker})` : ''}</span>
-                        <span className="text-obsidian-500 group-hover:text-emerald-400 flex items-center gap-1 text-[10px]">
-                          View in Transcript &rarr;
+                        <span className="text-dark-400 group-hover:text-emerald-400 flex items-center gap-1 text-[11px] font-normal">
+                          Inspect passage &rarr;
                         </span>
                       </div>
                       {cite.quote && (
-                        <blockquote className="border-l-2 border-emerald-500/40 pl-2 text-obsidian-100 font-mono text-[11px] mb-1">
+                        <blockquote className="border-l-2 border-emerald-500/40 pl-2.5 text-white font-mono text-xs mb-1.5">
                           "{cite.quote}"
                         </blockquote>
                       )}
-                      <p className="text-obsidian-400 text-[11px]">{cite.note}</p>
+                      <p className="text-dark-300 text-xs">{cite.note}</p>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Honest Uncertainty: What Evidence Does NOT Establish */}
-            <div className="p-3.5 rounded-lg bg-obsidian-850 border border-obsidian-800 space-y-1.5">
-              <h4 className="font-bold text-white uppercase tracking-wider text-[11px] font-mono text-amber-400">
-                4. Honest Uncertainty (What Evidence Does NOT Establish)
-              </h4>
-              <ul className="list-disc list-inside space-y-1 text-obsidian-300">
-                {record.analysis.what_evidence_does_not_establish.map((item, idx) => (
-                  <li key={idx} className="leading-relaxed">{item}</li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Next Steps & Ownership */}
-            <div className="p-3.5 rounded-lg bg-obsidian-850 border border-obsidian-800 space-y-2">
-              <h4 className="font-bold text-white uppercase tracking-wider text-[11px] font-mono text-purple-400">
-                5. Actionable Next Steps &amp; Ownership
-              </h4>
+            {/* Action Items */}
+            <div className="glass-card rounded-xl p-4 space-y-2.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                <ListTodo className="w-3.5 h-3.5" />
+                Action Items &amp; Stated Owners
+              </span>
               {record.analysis.next_steps.length === 0 ? (
-                <p className="text-obsidian-400 italic">No next steps required.</p>
+                <p className="text-dark-400 italic">No immediate next steps derived.</p>
               ) : (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {record.analysis.next_steps.map((step, idx) => (
-                    <div key={idx} className="p-2 rounded bg-obsidian-900 border border-obsidian-750 flex items-start justify-between gap-3">
+                    <div key={idx} className="p-2.5 rounded-lg bg-dark-900 border border-white/[0.06] flex items-start justify-between gap-3">
                       <div>
-                        <div className="font-semibold text-white">{step.action}</div>
-                        <div className="text-[11px] text-obsidian-400 font-mono mt-0.5">
-                          Timing: {step.timing || 'Immediate'}
+                        <div className="font-semibold text-white text-xs">{step.action}</div>
+                        <div className="text-[11px] text-dark-400 mt-0.5">
+                          Target: {step.timing || 'Immediate'}
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-500/10 border border-purple-500/30 text-purple-300 whitespace-nowrap">
-                        Owner: {step.owner || 'Unassigned'}
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-purple-500/10 border border-purple-500/25 text-purple-300 whitespace-nowrap">
+                        {step.owner || 'Unassigned'}
                       </span>
                     </div>
                   ))}
@@ -307,27 +294,39 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
               )}
             </div>
 
+            {/* Scope Boundaries */}
+            <div className="p-3.5 rounded-xl border border-white/[0.05] bg-dark-900/40 space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-dark-400">
+                Scope Boundaries (What Evidence Does Not Establish)
+              </span>
+              <ul className="list-disc list-inside space-y-1 text-dark-400 text-xs mt-1">
+                {record.analysis.what_evidence_does_not_establish.map((item, idx) => (
+                  <li key={idx} className="leading-relaxed">{item}</li>
+                ))}
+              </ul>
+            </div>
+
           </div>
         )}
 
-        {/* --- TAB 2: EVIDENCE & TRANSCRIPT --- */}
+        {/* --- TAB 2: TRANSCRIPT --- */}
         {activeTab === 'transcript' && (
           <div className="space-y-3 text-xs">
             {record.has_usable_text ? (
               isCall ? (
-                <div className="p-4 rounded-lg bg-obsidian-850 border border-obsidian-800 space-y-3 font-mono leading-relaxed text-obsidian-200">
-                  <div className="flex items-center justify-between border-b border-obsidian-750 pb-2 text-obsidian-400 text-[11px]">
-                    <span>Source: Phone Call Audio Transcript</span>
-                    <span>Duration: {callPayload?.duration_seconds}s</span>
+                <div className="p-5 rounded-2xl glass-card space-y-3 font-mono leading-relaxed text-dark-200">
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 text-dark-400 text-xs">
+                    <span>Phone Audio Dialogue</span>
+                    <span>{callPayload?.duration_seconds}s total</span>
                   </div>
-                  <div className="whitespace-pre-wrap text-obsidian-100">
+                  <div className="whitespace-pre-wrap text-white text-xs font-sans leading-relaxed">
                     {callPayload?.transcript}
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2 font-mono">
-                  <div className="text-obsidian-400 text-[11px] px-1 mb-2">
-                    Showing {turns.length} verified meeting turns with speaker timestamps:
+                <div className="space-y-2">
+                  <div className="text-dark-400 text-xs px-1 mb-2">
+                    {turns.length} verified dialogue turns:
                   </div>
                   {turns.map((turn, i) => {
                     const turnNum = i + 1;
@@ -336,19 +335,19 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
                       <div
                         id={`turn-${turnNum}`}
                         key={i}
-                        className={`p-3 rounded-lg border transition ${
+                        className={`p-3.5 rounded-xl border transition-all duration-200 ${
                           isHighlighted 
-                            ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-lg' 
-                            : 'bg-obsidian-850 border-obsidian-800 text-obsidian-200'
+                            ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-xl ring-1 ring-emerald-500' 
+                            : 'glass-card text-dark-200'
                         }`}
                       >
-                        <div className="flex items-center justify-between text-[11px] mb-1 font-semibold text-obsidian-400">
-                          <span className={isHighlighted ? 'text-emerald-300 font-bold' : 'text-indigo-400'}>
+                        <div className="flex items-center justify-between text-xs mb-1.5 font-semibold">
+                          <span className={isHighlighted ? 'text-emerald-300' : 'text-indigo-400'}>
                             Turn {turnNum} • {turn.speaker}
                           </span>
-                          <span className="text-obsidian-500">{turn.timecode}</span>
+                          <span className="text-dark-400 font-mono text-[11px]">{turn.timecode}</span>
                         </div>
-                        <p className="leading-relaxed text-obsidian-100 font-sans">
+                        <p className="leading-relaxed text-white text-xs">
                           {turn.text}
                         </p>
                       </div>
@@ -357,55 +356,51 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
                 </div>
               )
             ) : (
-              <div className="p-8 text-center text-obsidian-400 rounded-lg bg-obsidian-850 border border-obsidian-800">
-                <Info className="w-8 h-8 mx-auto text-obsidian-600 mb-2" />
-                <h4 className="text-white font-medium mb-1">No Usable Transcript Supplied</h4>
-                <p className="text-xs max-w-md mx-auto">
+              <div className="p-8 text-center text-dark-400 rounded-2xl glass-card">
+                <Info className="w-8 h-8 mx-auto text-dark-500 mb-2" />
+                <h4 className="text-white font-medium mb-1">No Speech Recorded</h4>
+                <p className="text-xs max-w-sm mx-auto">
                   {record.transcript_payload?.unavailable_reason || 
-                   'Background call telemetry only. Per data contract rules, substantive conversational analysis is withheld.'}
+                   'Telephony signaling only. No usable conversation captured.'}
                 </p>
               </div>
             )}
           </div>
         )}
 
-        {/* --- TAB 3: ROUTING & MANUAL GOVERNANCE --- */}
+        {/* --- TAB 3: ROUTING & GOVERNANCE --- */}
         {activeTab === 'routing' && (
           <div className="space-y-4 text-xs">
             
-            {/* Suggested vs Manual Status */}
-            <div className="p-3.5 rounded-lg bg-obsidian-850 border border-obsidian-800 space-y-2">
+            <div className="glass-card rounded-xl p-4 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-obsidian-400 font-medium">Automated Recommendation:</span>
+                <span className="text-dark-400 font-medium">Recommended:</span>
                 <div className="flex gap-1">
                   {record.suggested_routes.map(r => (
-                    <span key={r} className="px-2 py-0.5 rounded text-[10px] font-mono bg-obsidian-750 text-obsidian-200 border border-obsidian-700">
+                    <span key={r} className="px-2 py-0.5 rounded text-[11px] font-mono bg-dark-800 text-dark-200 border border-white/[0.08]">
                       {r}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-obsidian-750 pt-2">
-                <span className="text-obsidian-400 font-medium">Current Status:</span>
-                <span className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold ${
+              <div className="flex items-center justify-between border-t border-white/[0.06] pt-2">
+                <span className="text-dark-400 font-medium">Active Classification:</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                   record.is_manually_corrected 
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' 
-                    : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                    ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30' 
+                    : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
                 }`}>
-                  {record.is_manually_corrected ? 'Manual Override In Effect' : 'Automated Suggestion'}
+                  {record.is_manually_corrected ? 'Manual Override Active' : 'System Recommendation'}
                 </span>
               </div>
             </div>
 
-            {/* Route Selector (Multi-select) */}
-            <div className="p-3.5 rounded-lg bg-obsidian-850 border border-obsidian-800 space-y-3">
-              <h4 className="font-bold text-white uppercase tracking-wider text-[11px] font-mono">
+            {/* Destination Selection */}
+            <div className="glass-card rounded-xl p-4 space-y-3">
+              <h4 className="font-semibold text-white text-xs">
                 Select Destination Route(s)
               </h4>
-              <p className="text-[11px] text-obsidian-400">
-                A conversation can have one or several destinations depending on requirements (e.g. Sales Coaching + Deal Next Steps).
-              </p>
 
               <div className="space-y-2">
                 {AVAILABLE_ROUTES.map((route) => {
@@ -414,23 +409,22 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
                     <div
                       key={route.id}
                       onClick={() => handleRouteToggle(route.id)}
-                      className={`p-2.5 rounded-lg border cursor-pointer transition flex items-start gap-3 ${
+                      className={`p-3 rounded-xl border cursor-pointer transition flex items-start gap-3 ${
                         isChecked 
                           ? 'bg-emerald-500/10 border-emerald-500/40 text-white' 
-                          : 'bg-obsidian-900 border-obsidian-800 text-obsidian-300 hover:border-obsidian-700'
+                          : 'bg-dark-900 border-white/[0.06] text-dark-300 hover:border-white/[0.12]'
                       }`}
                     >
-                      <div className={`w-4 h-4 rounded border mt-0.5 flex items-center justify-center shrink-0 ${
-                        isChecked ? 'bg-emerald-500 border-emerald-400 text-obsidian-950' : 'border-obsidian-600'
+                      <div className={`w-4 h-4 rounded-md border mt-0.5 flex items-center justify-center shrink-0 ${
+                        isChecked ? 'bg-emerald-500 border-emerald-400 text-dark-950' : 'border-dark-600'
                       }`}>
                         {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                       </div>
                       <div>
-                        <div className="font-semibold text-xs flex items-center gap-2">
-                          <span>{route.label}</span>
-                          <span className="font-mono text-[10px] text-obsidian-400">({route.id})</span>
+                        <div className="font-semibold text-xs text-white">
+                          {route.label}
                         </div>
-                        <div className="text-[11px] text-obsidian-400 mt-0.5">
+                        <div className="text-[11px] text-dark-400 mt-0.5">
                           {route.desc}
                         </div>
                       </div>
@@ -440,31 +434,31 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
               </div>
             </div>
 
-            {/* Override Reason Note */}
-            <div className="p-3.5 rounded-lg bg-obsidian-850 border border-obsidian-800 space-y-2">
-              <label className="block font-bold text-white uppercase tracking-wider text-[11px] font-mono">
-                Manual Override Reason / Justification:
+            {/* Override Justification */}
+            <div className="glass-card rounded-xl p-4 space-y-2">
+              <label className="block font-semibold text-white text-xs">
+                Override Justification Note:
               </label>
               <textarea
                 value={overrideReason}
                 onChange={(e) => setOverrideReason(e.target.value)}
-                placeholder="Explain why this conversation was manually redirected..."
+                placeholder="Explain reason for manual destination redirect..."
                 rows={2}
-                className="w-full p-2.5 rounded bg-obsidian-900 border border-obsidian-750 text-white text-xs placeholder-obsidian-500 focus:outline-none focus:border-emerald-500 font-sans"
+                className="w-full p-2.5 rounded-xl bg-dark-900 border border-white/[0.08] text-white text-xs placeholder-dark-500 focus:outline-none focus:border-emerald-500/50"
               />
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between gap-3 pt-2">
+            {/* Save Buttons */}
+            <div className="flex items-center justify-between gap-3 pt-1">
               {record.is_manually_corrected ? (
                 <button
                   type="button"
                   onClick={handleResetToSuggested}
                   disabled={isSavingRoute}
-                  className="px-3 py-1.5 rounded bg-obsidian-800 hover:bg-obsidian-750 text-obsidian-300 border border-obsidian-700 font-mono text-xs flex items-center gap-1.5 transition"
+                  className="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-750 text-dark-300 text-xs flex items-center gap-1.5 transition"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Reset to Automated
+                  Restore System Route
                 </button>
               ) : <div></div>}
 
@@ -472,15 +466,15 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
                 type="button"
                 onClick={handleSaveOverride}
                 disabled={isSavingRoute}
-                className="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center gap-1.5 transition shadow"
+                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 transition shadow"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                {isSavingRoute ? 'Saving...' : 'Save Manual Override'}
+                {isSavingRoute ? 'Saving...' : 'Save Override'}
               </button>
             </div>
 
             {saveSuccessMsg && (
-              <div className="p-2 rounded bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-center font-mono text-xs">
+              <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-center text-xs font-medium">
                 {saveSuccessMsg}
               </div>
             )}
@@ -490,24 +484,24 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
 
       </div>
 
-      {/* Footer Bar: Review State Quick Toggles */}
-      <div className="p-3 border-t border-obsidian-800 bg-obsidian-850/80 backdrop-blur flex items-center justify-between text-xs">
+      {/* Footer Status Bar */}
+      <div className="p-4 border-t border-white/[0.08] bg-dark-850/80 backdrop-blur flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
-          <span className="text-obsidian-400 font-mono">Intake State:</span>
-          <span className={`px-2 py-0.5 rounded font-mono text-[11px] ${
+          <span className="text-dark-400">Review:</span>
+          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
             record.review_state === 'reviewed' 
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
-              : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+              ? 'bg-emerald-500/15 text-emerald-300' 
+              : 'bg-amber-500/15 text-amber-300'
           }`}>
             {record.review_state}
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {record.review_state !== 'reviewed' ? (
             <button
               onClick={() => onUpdateReviewState('reviewed')}
-              className="px-3 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-medium text-xs transition flex items-center gap-1"
+              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow"
             >
               <Check className="w-3.5 h-3.5" />
               Mark as Reviewed
@@ -515,7 +509,7 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({
           ) : (
             <button
               onClick={() => onUpdateReviewState('unreviewed')}
-              className="px-2.5 py-1 rounded bg-obsidian-800 hover:bg-obsidian-750 text-obsidian-300 border border-obsidian-700 text-xs transition"
+              className="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-750 text-dark-300 text-xs transition"
             >
               Reopen
             </button>

@@ -29,6 +29,13 @@ The application opens at **`http://localhost:4000`**.
 
 > **Note on Deployed URL:** If reviewing via the hosted deployment, open the provided deployment link directly in any modern browser. Access is enabled without requiring sign-in or authorization.
 
+### Interface & Design System Preview
+The UI is styled with Plus Jakarta Sans typography, high-contrast badges, optical hierarchy, and glassmorphic cards:
+- **Triage Inbox:** `docs/screenshots/01_dashboard_main.png`
+- **Sync & Replay Pipeline:** `docs/screenshots/02_sync_pipeline.png`
+- **Evidence Inspector & Citations:** `docs/screenshots/03_evidence_inspector.png`
+- **Executive Daily Briefing:** `docs/screenshots/04_daily_briefing.png`
+
 ---
 
 ## 2. Test Pyramid & Terminal Verification
@@ -69,7 +76,7 @@ The application includes an **interactive Replay Stepper** directly in the UI he
 
 ## 4. Where Generated Exports & Manifests are Located
 
-When exports are generated (via `POST /api/export/generate` or clicking **"Exports & Manifest"** in the app):
+When exports are generated (via `POST /api/export/generate` or clicking **"Export Hub"** in the app):
 
 - **Physical Output Folder:** `/exports` in the project root.
 - **Machine-Readable Manifests:**

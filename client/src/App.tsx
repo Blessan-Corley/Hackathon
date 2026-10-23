@@ -7,7 +7,6 @@ import { TriageInbox } from './components/TriageInbox.js';
 import { EvidenceInspector } from './components/EvidenceInspector.js';
 import { ManagerBriefModal } from './components/ManagerBriefModal.js';
 import { ExportModal } from './components/ExportModal.js';
-import { RubricVerificationModal } from './components/RubricVerificationModal.js';
 import { fetchRecords, fetchMetrics, updateRoute, resetRoute, updateReviewState } from './api/client.js';
 import { ProcessedRecord, DashboardMetrics, RouteCategory, ReviewState } from './types/index.js';
 
@@ -28,10 +27,10 @@ export function App() {
   const [selectedTranscriptFilter, setSelectedTranscriptFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Modals
+  // Modals & Panels
   const [isBriefOpen, setIsBriefOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
-  const [isRubricOpen, setIsRubricOpen] = useState(false);
+  const [isSyncOpen, setIsSyncOpen] = useState(false);
 
   // Load Data on mount and filter changes
   useEffect(() => {
@@ -109,18 +108,21 @@ export function App() {
   const m07Record = records.find(r => r.record_ref === 'M07');
 
   return (
-    <div className="min-h-screen bg-obsidian-950 text-obsidian-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-dark-950 text-dark-100 flex flex-col font-sans selection:bg-emerald-500/20 selection:text-emerald-300 antialiased">
       
       {/* Top Application Header */}
       <Header
         onOpenBrief={() => setIsBriefOpen(true)}
         onOpenExport={() => setIsExportOpen(true)}
-        onOpenRubric={() => setIsRubricOpen(true)}
+        onOpenSyncDrawer={() => setIsSyncOpen(!isSyncOpen)}
+        isSyncOpen={isSyncOpen}
         discrepanciesCount={metrics?.discrepancies_detected_count || 0}
       />
 
-      {/* Evaluator Replay Verification Stepper */}
+      {/* Sync & Replay Verification Bar */}
       <ReplayBar
+        isOpen={isSyncOpen}
+        onClose={() => setIsSyncOpen(false)}
         onRefreshData={loadData}
         totalRecords={metrics?.total_selected_records || 0}
         usableTranscripts={metrics?.usable_transcript_count || 0}
@@ -129,7 +131,7 @@ export function App() {
       />
 
       {/* Main Workspace Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 space-y-6">
         
         {/* Metric Cards Grid */}
         {metrics && (
@@ -192,11 +194,6 @@ export function App() {
       <ExportModal
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
-      />
-
-      <RubricVerificationModal
-        isOpen={isRubricOpen}
-        onClose={() => setIsRubricOpen(false)}
       />
 
     </div>

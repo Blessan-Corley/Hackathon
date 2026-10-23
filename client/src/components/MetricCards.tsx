@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { 
-  FileText, 
   PhoneCall, 
-  Users, 
-  Radio, 
-  HelpCircle, 
-  CheckCircle, 
-  Clock, 
-  AlertOctagon,
-  ChevronRight
+  Calendar, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Info,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { DashboardMetrics } from '../types/index.js';
 
@@ -33,128 +31,134 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
       {/* 1. Total Selected Records */}
       <div 
         onClick={() => onFilterBySource?.('all')}
-        className="p-3.5 rounded-lg bg-obsidian-900 border border-obsidian-800 hover:border-obsidian-700 transition cursor-pointer relative group"
+        className="glass-card glass-card-hover rounded-2xl p-4 cursor-pointer relative"
       >
-        <div className="flex items-center justify-between text-obsidian-400 mb-1">
-          <span className="text-xs font-medium uppercase tracking-wider">Total Records</span>
+        <div className="flex items-center justify-between text-dark-400 mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-dark-400">Total Records</span>
           <button 
             type="button"
             onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'total' ? null : 'total'); }}
-            className="text-obsidian-500 hover:text-obsidian-300"
+            className="text-dark-500 hover:text-dark-300"
           >
-            <HelpCircle className="w-3.5 h-3.5" />
+            <Info className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="text-2xl font-bold font-mono text-white">
+        <div className="text-3xl font-bold text-white tracking-tight">
           {metrics.total_selected_records}
         </div>
-        <div className="text-[11px] text-obsidian-400 mt-1 flex items-center gap-1.5 font-mono">
-          <span>{metrics.total_calls} Calls</span>
+        <div className="text-[11px] text-dark-400 mt-2 flex items-center gap-1.5 font-medium">
+          <span className="text-dark-300">{metrics.total_calls} calls</span>
           <span>•</span>
-          <span>{metrics.total_meetings} Meetings</span>
+          <span className="text-dark-300">{metrics.total_meetings} meetings</span>
         </div>
 
         {activeTooltip === 'total' && (
-          <div className="absolute top-full left-0 mt-2 z-40 w-64 p-3 rounded-lg bg-obsidian-850 border border-obsidian-700 text-xs text-obsidian-200 shadow-xl">
-            <strong className="text-white block mb-1">Denominator: Total Extracted Records</strong>
-            Total distinct (source_type, source_id) tuples in dataset. 30 phone calls + 14 calendar meetings on 2026-08-21 (Asia/Kolkata).
+          <div className="absolute top-full left-0 mt-2 z-40 w-60 p-3 rounded-xl bg-dark-900 border border-white/[0.12] text-xs text-dark-200 shadow-2xl">
+            <strong className="text-white block mb-0.5">Total Ingested Records</strong>
+            Distinct (source_type, source_id) units across August 21, 2026.
           </div>
         )}
       </div>
 
-      {/* 2. Overall Usable Transcript Coverage */}
+      {/* 2. Usable Transcript Coverage */}
       <div 
         onClick={() => onFilterByTranscript?.('true')}
-        className="p-3.5 rounded-lg bg-obsidian-900 border border-obsidian-800 hover:border-obsidian-700 transition cursor-pointer relative group"
+        className="glass-card glass-card-hover rounded-2xl p-4 cursor-pointer relative"
       >
-        <div className="flex items-center justify-between text-obsidian-400 mb-1">
-          <span className="text-xs font-medium uppercase tracking-wider">Transcript Coverage</span>
+        <div className="flex items-center justify-between text-dark-400 mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-dark-400">Transcript Coverage</span>
           <button 
             type="button"
             onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'coverage' ? null : 'coverage'); }}
-            className="text-obsidian-500 hover:text-obsidian-300"
+            className="text-dark-500 hover:text-dark-300"
           >
-            <HelpCircle className="w-3.5 h-3.5" />
+            <Info className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="text-2xl font-bold font-mono text-emerald-400">
+        <div className="text-3xl font-bold text-emerald-400 tracking-tight">
           {metrics.usable_transcript_coverage_rate}%
         </div>
-        <div className="text-[11px] text-obsidian-400 mt-1 font-mono">
+        
+        {/* Progress bar visualizer */}
+        <div className="w-full h-1 bg-dark-800 rounded-full mt-2.5 overflow-hidden">
+          <div 
+            className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+            style={{ width: `${metrics.usable_transcript_coverage_rate}%` }}
+          ></div>
+        </div>
+
+        <div className="text-[11px] text-dark-400 mt-1.5 font-medium">
           <span className="text-white font-semibold">{metrics.usable_transcript_count}</span>
-          <span> / {metrics.usable_transcript_denominator} records</span>
+          <span> of {metrics.usable_transcript_denominator} conversations</span>
         </div>
 
         {activeTooltip === 'coverage' && (
-          <div className="absolute top-full left-0 mt-2 z-40 w-64 p-3 rounded-lg bg-obsidian-850 border border-obsidian-700 text-xs text-obsidian-200 shadow-xl">
-            <strong className="text-white block mb-1">Formula & Denominator</strong>
-            Usable text defined as non-empty call transcript or &gt;0 meeting turns. Numerator: {metrics.usable_transcript_count}, Denominator: {metrics.usable_transcript_denominator} total records.
+          <div className="absolute top-full left-0 mt-2 z-40 w-64 p-3 rounded-xl bg-dark-900 border border-white/[0.12] text-xs text-dark-200 shadow-2xl">
+            <strong className="text-white block mb-0.5">Coverage Definition</strong>
+            Conversations with verified speech (calls with text or meetings with turns) over total records.
           </div>
         )}
       </div>
 
-      {/* 3. Call Coverage vs Meeting Coverage */}
-      <div className="p-3.5 rounded-lg bg-obsidian-900 border border-obsidian-800 hover:border-obsidian-700 transition relative group">
-        <div className="flex items-center justify-between text-obsidian-400 mb-1">
-          <span className="text-xs font-medium uppercase tracking-wider">Type Breakdown</span>
+      {/* 3. Channel Breakdown */}
+      <div className="glass-card rounded-2xl p-4 relative">
+        <div className="flex items-center justify-between text-dark-400 mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-dark-400">By Channel</span>
           <button 
             type="button"
-            onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'type' ? null : 'type'); }}
-            className="text-obsidian-500 hover:text-obsidian-300"
+            onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'breakdown' ? null : 'breakdown'); }}
+            className="text-dark-500 hover:text-dark-300"
           >
-            <HelpCircle className="w-3.5 h-3.5" />
+            <Info className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="flex items-baseline justify-between">
+        <div className="flex items-baseline justify-between mt-1">
           <div>
-            <div className="text-lg font-bold font-mono text-cyan-400">
-              {metrics.call_transcript_count}/{metrics.call_transcript_denominator}
+            <div className="text-xl font-bold text-sky-400 tracking-tight">
+              {metrics.call_transcript_count}<span className="text-xs text-dark-400 font-normal">/{metrics.call_transcript_denominator}</span>
             </div>
-            <div className="text-[10px] text-obsidian-400 uppercase tracking-wider">Calls ({metrics.call_transcript_coverage_rate}%)</div>
+            <div className="text-[10px] text-dark-400 uppercase font-semibold mt-0.5">Calls ({metrics.call_transcript_coverage_rate}%)</div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-bold font-mono text-indigo-400">
-              {metrics.meeting_transcript_count}/{metrics.meeting_transcript_denominator}
+            <div className="text-xl font-bold text-indigo-400 tracking-tight">
+              {metrics.meeting_transcript_count}<span className="text-xs text-dark-400 font-normal">/{metrics.meeting_transcript_denominator}</span>
             </div>
-            <div className="text-[10px] text-obsidian-400 uppercase tracking-wider">Mtgs ({metrics.meeting_transcript_coverage_rate}%)</div>
+            <div className="text-[10px] text-dark-400 uppercase font-semibold mt-0.5">Mtgs ({metrics.meeting_transcript_coverage_rate}%)</div>
           </div>
         </div>
 
-        {activeTooltip === 'type' && (
-          <div className="absolute top-full left-0 mt-2 z-40 w-64 p-3 rounded-lg bg-obsidian-850 border border-obsidian-700 text-xs text-obsidian-200 shadow-xl">
-            <strong className="text-white block mb-1">Separate Denominators</strong>
-            Calls: 10 usable transcripts out of 30 calls (33.3%). Meetings: {metrics.meeting_transcript_count} usable transcripts out of 14 scheduled meetings ({metrics.meeting_transcript_coverage_rate}%).
+        {activeTooltip === 'breakdown' && (
+          <div className="absolute top-full left-0 mt-2 z-40 w-64 p-3 rounded-xl bg-dark-900 border border-white/[0.12] text-xs text-dark-200 shadow-2xl">
+            <strong className="text-white block mb-0.5">Channel Breakdown</strong>
+            Separates phone calls from calendar meetings so coverage is clear by channel.
           </div>
         )}
       </div>
 
-      {/* 4. Telephony Connection Rate */}
-      <div className="p-3.5 rounded-lg bg-obsidian-900 border border-obsidian-800 hover:border-obsidian-700 transition relative group">
-        <div className="flex items-center justify-between text-obsidian-400 mb-1">
-          <span className="text-xs font-medium uppercase tracking-wider">Source Connect Rate</span>
+      {/* 4. Connection Rate */}
+      <div className="glass-card rounded-2xl p-4 relative">
+        <div className="flex items-center justify-between text-dark-400 mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-dark-400">Connection Rate</span>
           <button 
             type="button"
             onClick={(e) => { e.stopPropagation(); setActiveTooltip(activeTooltip === 'connect' ? null : 'connect'); }}
-            className="text-obsidian-500 hover:text-obsidian-300"
+            className="text-dark-500 hover:text-dark-300"
           >
-            <HelpCircle className="w-3.5 h-3.5" />
+            <Info className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="text-2xl font-bold font-mono text-amber-400">
+        <div className="text-3xl font-bold text-amber-400 tracking-tight">
           {metrics.source_reported_connection_rate}%
         </div>
-        <div className="text-[11px] text-obsidian-400 mt-1 font-mono">
+        <div className="text-[11px] text-dark-400 mt-2 font-medium">
           <span className="text-white font-semibold">{metrics.source_reported_connected_calls}</span>
-          <span> / {metrics.source_reported_evaluated_calls} calls</span>
+          <span> of {metrics.source_reported_evaluated_calls} connected</span>
         </div>
 
         {activeTooltip === 'connect' && (
-          <div className="absolute top-full right-0 mt-2 z-40 w-72 p-3 rounded-lg bg-obsidian-850 border border-obsidian-700 text-xs text-obsidian-200 shadow-xl">
-            <strong className="text-white block mb-1">Source Metadata Rate (Caveat)</strong>
-            Numerator: calls with <code>is_connected === true</code> (11 calls). Denominator: all calls with non-null is_connected (30).
-            <span className="block mt-1 text-amber-300 text-[11px]">
-              *Note: B11 &amp; B14 report connected=true but are silent/unresponsive. C04 reports connected=false but Arun leaves 95s voicemail.
-            </span>
+          <div className="absolute top-full right-0 mt-2 z-40 w-68 p-3 rounded-xl bg-dark-900 border border-white/[0.12] text-xs text-dark-200 shadow-2xl">
+            <strong className="text-white block mb-0.5">Telephony Telemetry</strong>
+            Calls reporting <code>is_connected: true</code> in source telephony logs.
           </div>
         )}
       </div>
@@ -162,48 +166,45 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
       {/* 5. Review Backlog */}
       <div 
         onClick={() => onFilterByReview?.('unreviewed')}
-        className="p-3.5 rounded-lg bg-obsidian-900 border border-obsidian-800 hover:border-obsidian-700 transition cursor-pointer"
+        className="glass-card glass-card-hover rounded-2xl p-4 cursor-pointer"
       >
-        <div className="flex items-center justify-between text-obsidian-400 mb-1">
-          <span className="text-xs font-medium uppercase tracking-wider">Review Status</span>
+        <div className="flex items-center justify-between text-dark-400 mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-dark-400">Review Status</span>
         </div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold font-mono text-white">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-3xl font-bold text-white tracking-tight">
             {metrics.review_counts.reviewed}
           </span>
-          <span className="text-xs text-obsidian-400 font-mono">
+          <span className="text-xs text-dark-400 font-medium">
             / {metrics.total_selected_records} done
           </span>
         </div>
-        <div className="text-[11px] text-amber-400 mt-1 font-mono flex items-center gap-1.5">
-          <span>{metrics.review_counts.unreviewed} Pending</span>
+        <div className="text-[11px] text-dark-400 mt-2 font-medium flex items-center gap-1.5">
+          <span className="text-amber-400 font-semibold">{metrics.review_counts.unreviewed} pending</span>
           {metrics.review_counts.pending_re_review > 0 && (
-            <span className="text-rose-400">({metrics.review_counts.pending_re_review} Re-check)</span>
+            <span className="text-rose-400">({metrics.review_counts.pending_re_review} updated)</span>
           )}
         </div>
       </div>
 
-      {/* 6. Discrepancies & Overrides */}
-      <div className="p-3.5 rounded-lg bg-obsidian-900 border border-obsidian-800 hover:border-obsidian-700 transition">
-        <div className="flex items-center justify-between text-obsidian-400 mb-1">
-          <span className="text-xs font-medium uppercase tracking-wider">Integrity Alerts</span>
+      {/* 6. Discrepancy Alerts */}
+      <div className="glass-card rounded-2xl p-4">
+        <div className="flex items-center justify-between text-dark-400 mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-dark-400">Quality Signals</span>
         </div>
-        <div className="flex items-baseline justify-between">
+        <div className="flex items-baseline justify-between mt-1">
           <div>
-            <div className="text-xl font-bold font-mono text-amber-400">
+            <div className="text-2xl font-bold text-amber-400 tracking-tight">
               {metrics.discrepancies_detected_count}
             </div>
-            <div className="text-[10px] text-obsidian-400 uppercase tracking-wider">Discrepancies</div>
+            <div className="text-[10px] text-dark-400 uppercase font-semibold mt-0.5">Discrepancies</div>
           </div>
           <div className="text-right">
-            <div className="text-xl font-bold font-mono text-cyan-400">
+            <div className="text-2xl font-bold text-sky-400 tracking-tight">
               {metrics.manual_corrections_count}
             </div>
-            <div className="text-[10px] text-obsidian-400 uppercase tracking-wider">Overrides</div>
+            <div className="text-[10px] text-dark-400 uppercase font-semibold mt-0.5">Overrides</div>
           </div>
-        </div>
-        <div className="text-[10px] text-obsidian-400 mt-1 truncate">
-          C10, C06, C09 flagged
         </div>
       </div>
 

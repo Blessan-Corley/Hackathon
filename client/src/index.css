@@ -4,29 +4,46 @@
 
 @layer base {
   body {
-    @apply bg-obsidian-950 text-obsidian-100;
+    @apply bg-dark-950 text-dark-100 antialiased font-sans;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-semibold text-white;
   }
 }
 
-/* Custom scrollbars for high-density terminal look */
+/* Sleek modern scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0B0F17;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #283548;
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3B4B64;
+  background: rgba(255, 255, 255, 0.22);
 }
 
-.animate-pulse-subtle {
-  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.glass-card {
+  background: rgba(18, 21, 30, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-card-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  background: rgba(24, 29, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
 }
