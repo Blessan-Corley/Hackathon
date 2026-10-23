@@ -11,7 +11,7 @@ The project is structured as a monorepo containing a TypeScript backend engine a
 - **Backend (`server/`)**: Built with Node.js, Express, and TypeScript. Implements composite identity indexing, idempotent upserting, revision tracking, mathematical metric calculations, multi-destination Markdown dossier generation, and a verification audit engine.
 - **Frontend (`client/`)**: Built with React 19, TypeScript, Vite, and Tailwind CSS. Provides a triage inbox, metric dashboards, filter toolbar with custom semantic color indicators, an evidence inspector drawer with turn-by-turn citations, and an interactive data replay drawer.
 - **Data Source (`candidate/`)**: Contains original CRM call and meeting payloads (`01_initial.json` and `02_update.json`).
-- **Exports (`exports/`)**: Multi-destination dossier folders, `manifest.json`, and RFC 4180 compliant `manifest.csv`.
+- **Exports (`exports/`)**: Multi-destination dossier folders, `manifest.json` with top-level metadata block, and RFC 4180 compliant `manifest.csv`.
 
 ---
 
@@ -80,9 +80,9 @@ npm test
 Test coverage includes:
 - Idempotent upsert logic: deduplication over repeated imports.
 - Revision retention: verification that Revision 2 is retained when Revision 1 is re-ingested.
-- Override preservation: user route edits survive upstream payload refreshes.
+- Override preservation: user route edits survive upstream payload refreshes while system routes update independently.
 - Metric calculations: verifying explicit denominators and activity distributions.
-- Multi-destination export generation and manifest emission.
+- Multi-destination export generation: non-generic differentiated dossiers and manifest emission.
 
 ### Tier 3: Playwright End-to-End Browser Tests
 
@@ -112,9 +112,9 @@ The platform satisfies five core ingestion and idempotency guarantees:
 | :--- | :--- | :--- |
 | **1. Initial Import** | Ingest `01_initial.json` (`POST /api/replay/initial`) | Exactly 44 records loaded (30 calls, 14 meetings). 17 usable transcripts. M07 staged with 0 turns. |
 | **2. Repeat Import** | Ingest shuffled initial batch (`POST /api/replay/repeat-initial`) | Composite identity `(source_type, source_id)` deduplication ensures 0 duplicate records. Total remains 44. |
-| **3. Manual Correction** | Reassign M07 route (`PATCH /api/records/meeting/:id/route`) | Overrides M07 route to Customer Support with audit timestamp and manager justification note. |
-| **4. Ingest Update** | Ingest `02_update.json` (`POST /api/replay/update`) | M07 updated to Revision 2 with 27 dialogue turns. Total records remains 44. Manual route override to Customer Support is strictly preserved. |
-| **5. Test No-Downgrade** | Re-ingest `01_initial.json` (`POST /api/replay/repeat-initial`) | Incoming Revision 1 payload is rejected because Revision 2 is already active. M07 text and turns are retained. |
+| **3. Manual Correction** | Reassign M07 route (`PATCH /api/records/meeting/:id/route`) | Overrides M07 route to `internal_ops` (distinct from system suggestion) with audit timestamp and manager justification note. |
+| **4. Ingest Update** | Ingest `02_update.json` (`POST /api/replay/update`) | M07 updated to Revision 2 with 27 dialogue turns. Total records remains 44. System suggested route updates to `customer_support`, while user manual route override to `internal_ops` is strictly preserved. |
+| **5. Test No-Downgrade** | Re-ingest `01_initial.json` (`POST /api/replay/repeat-initial`) | Incoming Revision 1 payload is rejected because Revision 2 is already active. M07 text, turns, and manual route are retained. |
 
 These steps can be executed individually from the UI via the **Sync & Replay Feeds** drawer, or verified automatically by clicking **Run 5-Step Evaluation Suite**.
 
@@ -129,44 +129,62 @@ All dashboard KPIs are computed with mathematically defined numerators and denom
 - **Call Coverage (33.3%)**: Numerator = 10 calls with transcript text. Denominator = 30 total calls.
 - **Meeting Coverage (57.1% post-update)**: Numerator = 8 meetings with turns. Denominator = 14 total meetings.
 - **Source Telephony Connect Rate (36.7%)**: Numerator = 11 calls flagged `is_connected: true`. Denominator = 30 calls evaluated.
-  *Note:* Upstream telephony telemetry reflects carrier signaling: calls B11 and B14 report `is_connected: true` despite being dropped 0s-9s dials, while call C04 reports `is_connected: false` with 95s IVR duration because Arun recorded a voicemail through screening rather than reaching a live prospect (standard telephony protocol).
+  *Note:* Upstream telephony telemetry reflects carrier signaling: calls B11 (26s) and B14 (9s) report `is_connected: true` with machine unresponsive outcomes, while call C04 reports `is_connected: false` with 95s IVR duration because Arun recorded a voicemail through screening rather than reaching a live prospect (standard telephony protocol).
 
 ---
 
-## 7. Key Findings & Intentional Decisions
+## 7. Strategic Cross-Record Insights & Architectural Decisions
 
-### Telemetry Findings
+### Breakthrough Cross-Record Findings
 
-1. **Phantom Follow-up on Departed Contact (Call C10)**:
+1. **The Prepaid vs. Credit Expectation Gap (M03 & M04)**:
+   - Across both mid-market commercial meetings on 21 August 2026, prospective buyers entered discussions expecting revolving corporate credit lines and encountered immediate friction upon learning SpendNest issues pre-funded debit cards:
+     - **Asterloom Systems (Meeting M03, Turns 6–7)**: Customer A questioned: *"Wait, these are prepaid? I had thought about a corporate credit card. A prepaid card means we have to load funds in advance, which ties up our cash flow."*
+     - **Cedarwave Distribution (Meeting M04, Turns 9–11)**: Customer A emphasized: *"moving from prepaid to credit is the main issue for us. At some stage we will have to consider another option for that. We already have a corporate credit line of about INR 1.3 crore."*
+   - **Executive Takeaway**: SpendNest's card model creates systematic resistance in accounts with existing banking lines. Sales leadership must equip reps with a clear hybrid messaging strategy (ingesting bank credit card feeds for senior executives while using prepaid cards for frontline staff) rather than positioning prepaid cards as a blanket credit replacement.
+
+2. **The 23:51–23:59 IST Automated Dialer Burst (B01–B20)**:
+   - All 20 background unreached calls occurred in an 8-minute burst right before midnight: between **23:51:02 and 23:59:29 IST** (18:21:02 to 18:29:29 UTC) on 21 August 2026.
+   - Only two representatives placed all 20 calls: **Arun** (12 calls) and **Leela** (8 calls). Zero background calls were placed by Dev, Kiran, Meera, or Ravi.
+   - Durations ranged strictly from **3 seconds to 31 seconds** (minimum 3s on B07 and B20, maximum 31s on B18, with B11 lasting 26s).
+   - Upstream observed outcomes: 15 were machine `voicemail` drops, and 5 were `unresponsive` drops (B01, B04, B07, B10, B14).
+   - Inbound vs. Outbound: Calls B02, B06, and B11 were inbound carrier screening callbacks, while the remaining 17 were outbound dials.
+   - **Frontline Takeaway**: This pattern confirms an automated end-of-day power-dialer campaign or carrier routing sweep. Isolating these 20 calls explains the 36.7% aggregate connect rate and prevents skewing individual rep productivity metrics.
+
+### Upstream Telemetry Discrepancy Findings
+
+1. **Phantom Follow-up on Departed Contact (Call C10 - Meadowbrick)**:
    - Upstream CRM metadata tagged `observed_outcome: follow_up`.
    - Spoken dialogue proves contact Aniket explicitly left Meadowbrick and declined follow-up (*"I don't work there anymore... No. I said I will contact you if there is anything to discuss"*).
    - The engine flags an Outcome Discrepancy, prevents automated outreach, and prompts account re-qualification.
 
-2. **Customer Defect Escalation (Meeting M07)**:
+2. **Customer Defect Escalation (Meeting M07 - Willowfield Trust)**:
    - Received in update delivery Revision 2 with 27 conversational turns.
-   - Screen-share reveals an event-payment description persistence bug.
-   - The engine updates transcript contents while preserving prior manual routing to Customer Support and Engineering SLA queues.
+   - Screen-share reveals 4 distinct UI and payment bugs (event payment description save reversion, recreate payment attachment failure, stuck reimbursement processing, and mark as paid amount retention).
+   - The engine updates transcript contents while strictly preserving the manager's manual routing override.
 
 3. **Rep Telephony Attribution Mismatch (Call C06)**:
    - CRM recorded representative name as Meera.
    - Spoken voice is Ravi (*"Good evening. Ravi here. I'll say at the start that this is a cold call"*).
    - The engine flags an Attribution Conflict chip to prevent misallocated sales coaching.
 
-4. **Internal and Vendor Separation**:
-   - Meeting M10 is an internal staff training session on subscription billing.
-   - Meeting M02 is a vendor pitch from LedgerBridge for e-invoicing API integration.
-   - Both are routed to Internal Operations and excluded from sales pipeline quotas.
+4. **Restricted Referral Governance (Call C09)**:
+   - Upstream metadata marked outcome as `referred`.
+   - Spoken dialogue proves contact Vedant explicitly prohibited using his name (*"No, please don't use my name"*).
+   - The engine flags a governance warning ensuring outreach to business head Mr. Rishabh proceeds independently on cold merits.
 
 ### Deliberately Rejected Decision
 
-- **Entity Merging of Matching Titles (Meeting M04 & M13 - Cedarwave Distribution)**:
-  We considered automatically collapsing M04 and M13 into a single unified account record because both share the exact calendar title *"Cedarwave Distribution / SpendNest discussion"*. However, we deliberately **rejected** heuristic entity merging for three reasons:
-  1. **Strict Contract Identity**: The data contract mandates that `(source_type, source_id)` is the sole immutable record identity. Merging on title strings violates the contract boundary.
-  2. **Different Telemetry & Stakeholders**: M04 was organized by `team09@example.com` (09:00 UTC) with 27 usable dialogue turns on corporate credit card migration. M13 was organized by `team06@example.com` (07:30 UTC) with recording status `organizer_only` (unattended). Collapsing them would silently erase the unattended meeting exception.
-  3. **Data Loss Trade-off**: Treating separate calendar invites as one record corrupts individual meeting audit trails. We chose to retain M13 in the `intake_exceptions` triage queue with honest uncertainty, while independently routing M04 to `customer_success` and `deal_next_steps`.
+- **Entity Merging of Related Meetings (Meeting M04 & M13 - Cedarwave Distribution)**:
+  Meeting M04 (*Cedarwave Distribution / SpendNest discussion*, 09:00–09:30 UTC, organizer `team09@example.com`, status `recorded`, 25 turns) and Meeting M13 (*SpendNest <> Cedarwave Distribution - Migration discussion*, 08:30–09:30 UTC, organizer `team09@example.com`, status `not_scheduled`) involve the same client account (*Cedarwave Distribution*), share the exact same organizer (`team09@example.com`), and have overlapping calendar windows (`08:30–09:30 UTC` vs `09:00–09:30 UTC`).
+  Under the Data Dictionary rules, an engine is permitted to suggest a proposed association with visible uncertainty between two related records.
+  However, we deliberately **rejected** collapsing or heuristically merging M13 into M04's record entity for three reasons:
+  1. **Strict Contract Identity**: The data contract mandates that `(source_type, source_id)` is the sole immutable record identity. Merging calendar records across different source IDs violates the ingestion contract boundary.
+  2. **Preserving Unscheduled Booking Telemetry**: M13's recording status is `not_scheduled` (*"No notetaker was ever scheduled for this meeting"*). Collapsing M13 into M04 would silently erase this calendar coordination anomaly.
+  3. **Honest Uncertainty Audit**: Instead of concealing M13 inside M04, we maintain separate intake auditability: M04 is routed to `customer_success` and `deal_next_steps` with 25 turns of verified dialogue, while M13 is retained in `intake_exceptions` with honest uncertainty noting its shared organizer and overlapping time with M04.
 
-- **Collapsing 20 Voicemail Drops (B01–B20) into a Single Row**:
-  We also considered grouping all background unreached calls into an aggregate summary card. We rejected this because a frontline manager needs to see individual dial durations (e.g. 7s vs 24s), rep attribution, and carrier response codes to audit rep calling patterns and data ops lead quality. Instead, we sorted the inbox so high-priority meetings (M01–M14) and evaluated conversations (C01–C10) appear first, while background screening drops sit at the bottom.
+- **Collapsing 20 Voicemail Drops (B01–B20) into a Single Aggregate Summary**:
+  We also considered grouping all background unreached calls into an aggregate summary card. We rejected this because a frontline manager needs to see individual dial durations (e.g. 3s vs 31s), rep attribution (Arun vs Leela), and carrier response codes to audit dialer cadence and data ops lead quality. Instead, we sorted the inbox so high-priority meetings (M01–M14) and evaluated conversations (C01–C10) appear first, while background screening drops sit at the bottom.
 
 ---
 
@@ -176,31 +194,32 @@ Per the submission brief (*"Pre-generated analysis is allowed. If you use it, ma
 
 - **What Is Pre-generated (Curated Prior to Runtime)**:
   - The substantive qualitative dossiers (headlines, synthesis, citations, honest uncertainties, and next steps) for the 18 active conversations were prepared with AI assistance from verbatim transcript texts and stored deterministically in `server/src/analysis/dossiers.ts` keyed by `record_ref`.
-  - This ensures 100% reproducible evaluations, zero invented claims or hallucinated quotes, and instantaneous offline execution without requiring third-party API keys or incurring LLM token latency.
-  - Every citation was verified directly against `CONVERSATIONS.md` turns and quotes.
+  - Multi-route conversations (e.g. M03, C04, C09, M09) receive tailored, route-differentiated dossiers rather than byte-identical duplicates: M03 outputs a commercial proposal dossier for `deal_next_steps` and a pricing transparency coaching dossier for `sales_coaching`.
+  - Every citation was verified directly against `CONVERSATIONS.md` turns and quotes. Citing turns for phone calls is strictly forbidden by schema; phone calls cite verbatim quote snippets.
+  - Owners and dates are set strictly when explicitly stated in dialogue; unassigned steps have `owner: null` and `timing: null` per the Data Contract specification.
 
 - **What the Application Actually Computes at Runtime**:
   - **Identity Resolution & Deduplication**: Indexes records strictly by composite identity `(source_type, source_id)`, guaranteeing zero duplicate records regardless of import order.
   - **Telemetry Computation**: Computes `has_usable_text`, `text_length_chars`, and `speaker_count_computed` from raw payload envelopes at ingestion time.
   - **Filter-Reactive Metrics Engine**: Recalculates all KPI cards, coverage rates, and denominators dynamically for the active filter slice (e.g. filtering to Meetings recalculates metrics for the 14 meetings rather than displaying static global numbers).
   - **Hourly Activity Distribution**: Dynamically buckets interaction timestamps into Asia/Kolkata working hours (09:00–23:00 IST), rendering a stacked calls vs meetings timeline.
-  - **Revision Ordering & State Machine**: Ingests higher revisions, rejects older/same revisions, updates suggested routes (e.g. M07 updates from `intake_exception` to `customer_support`), marks `analysis_freshness` as `stale_pending_re-review`, and preserves user manual route corrections.
+  - **Revision Ordering & State Machine**: Ingests higher revisions, rejects older/same revisions, updates suggested routes, marks `analysis_freshness` as `stale_pending_re-review`, and preserves user manual route corrections.
   - **Differentiated Multi-Destination Exports**: Formats distinct Markdown files tailored to each destination category (`sales_coaching`, `deal_next_steps`, `customer_support`, `customer_success`, `partnerships`, `internal_ops`, `intake_exception`) and emits machine-readable `manifest.json` and `manifest.csv`.
 
 ---
 
 ## 9. Approximate Time Spent & Engineering Context
 
-- **Total Time Spent**: Approximately 7.5 hours total.
+- **Total Time Spent**: Approximately 8.5 hours total.
   - *Phase 1 (Pre-commit / ~3.5 hours)*: In-depth reading of `ASSIGNMENT.md`, `DATA_CONTRACT.md`, and raw source data; manual fact-checking of conversation transcripts; contract architecture design; and formulating the routing taxonomy.
-  - *Phase 2 (Implementation / ~4 hours)*: Test-driven backend development (Vitest unit and integration suites), idempotent ingestion engine, React frontend with Tailwind and Lucide icons, Playwright E2E browser tests, and Docker containerization.
+  - *Phase 2 (Implementation & Refinement / ~5 hours)*: Test-driven backend development (Vitest unit and integration suites), idempotent ingestion engine, React frontend with Tailwind and Lucide icons, Playwright E2E browser tests, Docker containerization, and granular factual citation verification.
 - **Known Limitations**:
   - Single-Date Horizon: All 44 interactions occur on Friday, August 21, 2026. Multi-week historical trend forecasting is not possible because the dataset represents a single operational day.
   - Telephony Waveforms: Audio waveforms were not supplied; telephony duration and IVR behavior are evaluated from upstream headers and transcript text.
 - **Next Steps & Roadmap**:
-  - Bi-directional webhook connector for HubSpot, Salesforce, and Gong.
+  - Bi-directional webhook connector for CRM systems.
   - Native SQLite persistence adapter for high-throughput enterprise deployments.
-  - Automatic audio waveform transcription pipeline for real-time telephony streams.
+  - Real-time audio stream transcription pipeline.
 
 ---
 
@@ -233,5 +252,7 @@ exports/
 └── manifest.json
 ```
 
-- When an interaction serves multiple business functions (e.g. M03 involves both Deal Next Steps and Sales Coaching), distinct dossiers are written to both respective destination folders.
+- When an interaction serves multiple business functions (e.g. M03 involves both Deal Next Steps and Sales Coaching), distinct, tailored dossiers are written to both respective destination folders.
+- `manifest.json` contains a top-level `export_metadata` block (including the relative path to the Manager Daily Brief) and strictly 44 source record items in `records`.
+- `manifest.csv` strictly contains 44 rows (plus header), exactly one per source record.
 - All file paths inside `manifest.json` and `manifest.csv` are relative to the export root directory.

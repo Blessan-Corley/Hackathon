@@ -237,7 +237,7 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
               </button>
             </div>
             <p className="text-dark-300 leading-relaxed text-[11px]">
-              Measures upstream telephony tags. Note: calls B11 and B14 claim connected but are unresponsive, while C04 claims disconnected despite rep speaking 95s.
+              Measures upstream telephony tags. Note: calls B11 (26s) and B14 (9s) report is_connected: true with machine unresponsive outcomes, while C04 is an unattended screening voicemail (95s duration, is_connected: false as standard for voicemail capture).
             </p>
           </div>
         )}

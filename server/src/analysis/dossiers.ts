@@ -2,7 +2,7 @@ import { ConversationAnalysis, RouteCategory } from '../domain/types.js';
 
 export const DOSSIERS: Record<string, {
   routes: RouteCategory[] | ((revision: number) => RouteCategory[]);
-  analysis: (revision: number) => ConversationAnalysis;
+  analysis: (revision: number, route?: RouteCategory) => ConversationAnalysis;
 }> = {
   // --- CALLS ---
   C01: {
@@ -27,14 +27,14 @@ export const DOSSIERS: Record<string, {
       next_steps: [
         {
           action: 'Sales coaching for Arun on qualifying prospect tech maturity before leading into generic automation pitches.',
-          owner: 'Sales Manager',
-          timing: 'Immediate',
+          owner: null,
+          timing: null,
           verifiable: true
         },
         {
           action: 'Tag Harborlight Advisory contact record as Not Interested / Existing Automated Solution.',
-          owner: 'Arun',
-          timing: '2026-08-21 EOD',
+          owner: null,
+          timing: null,
           verifiable: true
         }
       ],
@@ -45,26 +45,26 @@ export const DOSSIERS: Record<string, {
   C02: {
     routes: ['deal_next_steps'],
     analysis: () => ({
-      headline: 'Gatekeeper Interaction - Target Contact Out of Office',
-      what_happened: 'Arun called Fernhaven Group requesting Leela. Receptionist Kavya informed him Leela is out of office. Arun left his callback details politely.',
-      why_it_matters: 'Valid gatekeeper touchpoint; relationship maintained professionally without burning lead.',
+      headline: 'Gatekeeper Interaction - Target Contact Out of Office & Voicemail Transfer',
+      what_happened: 'Arun called Fernhaven Group requesting Leela. Receptionist Kavya stated Leela was not in the office today and offered either to take a message or transfer to voicemail. Arun chose voicemail transfer: "Her voicemail would be fine, thank you." Kavya transferred the call. Arun did not leave callback details with Kavya.',
+      why_it_matters: 'Professional gatekeeper engagement. Lead is not burned; voicemail path chosen directly.',
       evidence_citations: [
         {
           id: 'c02-cite-1',
           type: 'quote',
           reference: 'Spoken Transcript',
-          quote: "It looks as though she isn't in the office today. Can I take a message?",
-          note: 'Gatekeeper confirms contact identity and accepts message.'
+          quote: "It looks as though she isn't in the office today. Would you like to leave a message with me, or would you prefer her voicemail? Her voicemail would be fine, thank you.",
+          note: 'Receptionist confirms contact out of office and transfers Arun to voicemail.'
         }
       ],
       what_evidence_does_not_establish: [
-        'Does not establish Leela\'s exact return date or purchasing authority.'
+        'Does not establish Leela\'s return date, or whether Arun left a voicemail after the transfer (audio ends at mailbox transfer).'
       ],
       next_steps: [
         {
-          action: 'Follow-up call to Fernhaven Group next business week.',
+          action: 'Follow up with Leela at Fernhaven Group if no response to voicemail transfer.',
           owner: 'Arun',
-          timing: '2026-08-25',
+          timing: null,
           verifiable: true
         }
       ],
@@ -76,7 +76,7 @@ export const DOSSIERS: Record<string, {
     routes: ['deal_next_steps'],
     analysis: () => ({
       headline: 'Technical API Evaluation - Budget Sensitivity & Monday Follow-up',
-      what_happened: 'Rep Kiran reconnected with Milan regarding SpendNest developer API access and event webhooks. Milan noted prior price resistance, requested an email summary with a specific subject line, and agreed to speak Monday/Tuesday.',
+      what_happened: 'Rep Kiran reconnected with Milan regarding SpendNest developer API access and event webhooks. Milan noted prior price resistance, requested an email summary with a specific subject line ("Developer access and event notifications — follow-up"), and agreed to speak Monday or Tuesday.',
       why_it_matters: 'Active evaluation with explicit follow-up instructions and agreed communication channel.',
       evidence_citations: [
         {
@@ -94,13 +94,13 @@ export const DOSSIERS: Record<string, {
         {
           action: 'Send technical summary email with subject "Developer access and event notifications — follow-up".',
           owner: 'Kiran',
-          timing: '2026-08-21 EOD',
+          timing: null,
           verifiable: true
         },
         {
-          action: 'Schedule follow-up phone call for Monday morning.',
+          action: 'Follow up by phone on Monday or Tuesday as agreed.',
           owner: 'Kiran',
-          timing: '2026-08-24 10:00 AM',
+          timing: 'Monday or Tuesday (2026-08-24/25)',
           verifiable: true
         }
       ],
@@ -110,32 +110,64 @@ export const DOSSIERS: Record<string, {
 
   C04: {
     routes: ['deal_next_steps', 'sales_coaching'],
-    analysis: () => ({
-      headline: 'Detailed Follow-Up Voicemail Left After Email Delivery Correction',
-      what_happened: 'Arun navigated an automated screening service and left a 95-second voicemail for Ritesh at Lanternpath Media following up on expense software collateral re-sent to a corrected email address.',
-      why_it_matters: 'Active account re-engagement attempt following an earlier email delivery issue; rep clearly stated purpose and requested callback.',
-      evidence_citations: [
-        {
-          id: 'c04-cite-1',
-          type: 'quote',
-          reference: 'Spoken Transcript',
-          quote: "Arun from SpendNest here. I'm following up on your consideration of our expense platform for Lanternpath Media. My understanding is that our information first went to the wrong email address. We subsequently used the corrected address you gave us, and I hope you have now had a chance to see it.",
-          note: 'Arun leaves detailed voicemail with context on corrected proposal email.'
-        }
-      ],
-      what_evidence_does_not_establish: [
-        'Does not establish whether Ritesh opened or reviewed the corrected email proposal.'
-      ],
-      next_steps: [
-        {
-          action: 'Monitor email open tracking for Lanternpath Media proposal.',
-          owner: 'Arun',
-          timing: '2026-08-22',
-          verifiable: true
-        }
-      ],
-      is_precomputed: true
-    })
+    analysis: (_rev: number, route?: RouteCategory) => {
+      if (route === 'sales_coaching') {
+        return {
+          headline: 'Lanternpath Media - Voicemail Execution & IVR Screening Coaching',
+          what_happened: 'Rep Arun navigated an automated screening service and delivered a structured 95-second voicemail for Ritesh at Lanternpath Media clarifying that earlier materials were re-sent to a corrected email address.',
+          why_it_matters: 'Frontline coaching focus: rep demonstrated persistence and clear delivery (stating identity, purpose, delivery correction, and contact number), but 95s is lengthy for an outbound voicemail. Coach on tighter messaging (30-45s).',
+          evidence_citations: [
+            {
+              id: 'c04-cite-coach',
+              type: 'quote',
+              reference: 'Spoken Transcript',
+              quote: "Arun from SpendNest here. I'm following up on your consideration of our expense platform for Lanternpath Media. My understanding is that our information first went to the wrong email address. We subsequently used the corrected address you gave us, and I hope you have now had a chance to see it.",
+              note: 'Rep delivers structured explanation of corrected delivery into prospect voicemail.'
+            }
+          ],
+          what_evidence_does_not_establish: [
+            'Does not establish whether Ritesh checks voicemails or prefers email outreach.'
+          ],
+          next_steps: [
+            {
+              action: 'Coach Arun on optimal voicemail brevity (targeting 30-45 seconds) while retaining key context.',
+              owner: null,
+              timing: null,
+              verifiable: true
+            }
+          ],
+          is_precomputed: true
+        };
+      }
+
+      // Default: deal_next_steps
+      return {
+        headline: 'Lanternpath Media - Account Re-engagement Following Corrected Email Delivery',
+        what_happened: 'Arun navigated automated screening and left a 95-second voicemail for Ritesh at Lanternpath Media following up on expense software collateral re-sent to a corrected email address. Arun requested a callback to discuss platform fit.',
+        why_it_matters: 'Active account re-engagement attempt following an earlier delivery misdirection; proposal re-sent and callback requested.',
+        evidence_citations: [
+          {
+            id: 'c04-cite-deal',
+            type: 'quote',
+            reference: 'Spoken Transcript',
+            quote: "Arun from SpendNest here. I'm following up on your consideration of our expense platform for Lanternpath Media. My understanding is that our information first went to the wrong email address. We subsequently used the corrected address you gave us, and I hope you have now had a chance to see it. Please call me back to let me know where things stand.",
+            note: 'Arun confirms re-sent proposal and requests callback on stated number.'
+          }
+        ],
+        what_evidence_does_not_establish: [
+          'Does not establish whether Ritesh has read the re-sent proposal.'
+        ],
+        next_steps: [
+          {
+            action: 'Await callback from Ritesh regarding re-sent Lanternpath Media proposal; follow up if unreturned.',
+            owner: 'Arun',
+            timing: null,
+            verifiable: true
+          }
+        ],
+        is_precomputed: true
+      };
+    }
   },
 
   C05: {
@@ -143,14 +175,14 @@ export const DOSSIERS: Record<string, {
     analysis: () => ({
       headline: 'Competitive Encounter - StoreHarbor Incumbent Identified',
       what_happened: 'Rep Meera pitched multi-store expense management. Prospect revealed they already use StoreHarbor and other tools for vendor payments and store cards, but agreed to review SpendNest presentation collateral.',
-      why_it_matters: 'Identifies primary market competitor (StoreHarbor) and secures email permission to send competitive battlecard.',
+      why_it_matters: 'Identifies primary market competitor (StoreHarbor) and secures email permission to send comparative presentation collateral.',
       evidence_citations: [
         {
           id: 'c05-cite-1',
           type: 'quote',
           reference: 'Spoken Transcript',
           quote: 'May I ask which platform you\'re using? There are several. One is StoreHarbor, and we use others too. What I suggest is that you send me your presentation.',
-          note: 'Prospect names incumbent competitor StoreHarbor and gives email contact05@example.com.'
+          note: 'Prospect names incumbent competitor StoreHarbor and provides email contact05@example.com.'
         }
       ],
       what_evidence_does_not_establish: [
@@ -158,9 +190,9 @@ export const DOSSIERS: Record<string, {
       ],
       next_steps: [
         {
-          action: 'Send comparative presentation highlighting SpendNest advantages over StoreHarbor to contact05@example.com.',
+          action: 'Send SpendNest product presentation collateral to contact05@example.com as requested.',
           owner: 'Meera',
-          timing: '2026-08-21 EOD',
+          timing: null,
           verifiable: true
         }
       ],
@@ -196,8 +228,8 @@ export const DOSSIERS: Record<string, {
       next_steps: [
         {
           action: 'Correct telephony seat assignment for Ravi to prevent account misattribution.',
-          owner: 'Sales Operations',
-          timing: 'Immediate',
+          owner: null,
+          timing: null,
           verifiable: true
         }
       ],
@@ -225,15 +257,15 @@ export const DOSSIERS: Record<string, {
       ],
       next_steps: [
         {
-          action: 'Send partnership deck and referral agreement draft via messaging app.',
+          action: 'Send partnership proposal deck via messaging app as requested.',
           owner: 'Dev',
-          timing: '2026-08-21 EOD',
+          timing: null,
           verifiable: true
         },
         {
-          action: 'Follow-up partnership review call on Monday.',
+          action: 'Follow up by phone on Monday as agreed.',
           owner: 'Dev',
-          timing: '2026-08-24',
+          timing: 'Monday (2026-08-24)',
           verifiable: true
         }
       ],
@@ -261,9 +293,9 @@ export const DOSSIERS: Record<string, {
       ],
       next_steps: [
         {
-          action: 'Draft email to contact08@example.com referencing conversation with Raghav.',
+          action: 'Draft proposal to contact08@example.com referencing introduction from Raghav.',
           owner: 'Meera',
-          timing: '2026-08-22 09:00 AM',
+          timing: null,
           verifiable: true
         }
       ],
@@ -273,46 +305,85 @@ export const DOSSIERS: Record<string, {
 
   C09: {
     routes: ['sales_coaching', 'deal_next_steps'],
-    analysis: () => ({
-      headline: 'Restricted Referral - Name-Dropping Forbidden by Contact',
-      what_happened: 'Meera called Vedant (130 store chain, in-house software). Vedant suggested reaching out to business head Mr. Rishabh on professional networks, but explicitly forbade using his name.',
-      why_it_matters: 'Upstream metadata marked `observed_outcome: referred`. However, the referral has strict governance constraints: using Vedant\'s name will burn credibility.',
-      evidence_citations: [
-        {
-          id: 'c09-cite-1',
-          type: 'quote',
-          reference: 'Spoken Transcript',
-          quote: "Would it be all right if I mentioned your name when contacting him? No, please don't use my name.",
-          note: 'Vedant strictly prohibits using his identity during outreach.'
-        }
-      ],
-      what_evidence_does_not_establish: [
-        'Does not establish Rishabh\'s direct email or phone number.'
-      ],
-      discrepancy: {
-        field: 'observed_outcome',
-        upstream_claim: 'referred',
-        spoken_reality: 'Contact strictly forbade using his name ("No, please don\'t use my name").',
-        impact_explanation: 'Treating this as an authorized warm referral would severely backfire upon cold outreach to Rishabh.',
-        severity: 'high'
-      },
-      next_steps: [
-        {
-          action: 'Connect with Mr. Rishabh on professional networking site via cold value-add pitch (WITHOUT mentioning Vedant).',
-          owner: 'Meera',
-          timing: '2026-08-24',
-          verifiable: true
-        }
-      ],
-      is_precomputed: true
-    })
+    analysis: (_rev: number, route?: RouteCategory) => {
+      if (route === 'sales_coaching') {
+        return {
+          headline: 'Sales Coaching - Strict Referral Governance & Name-Dropping Prohibition',
+          what_happened: 'Meera called Vedant (130-store chain, in-house software). Vedant suggested contacting business head Mr. Rishabh on professional networks, but strictly commanded: "No, please don\'t use my name." Upstream CRM metadata marked outcome as "referred".',
+          why_it_matters: 'Critical referral governance coaching: treating this as an authorized warm referral would severely backfire. Sales reps must be trained never to name-drop when a contact explicitly refuses consent.',
+          evidence_citations: [
+            {
+              id: 'c09-cite-coach',
+              type: 'quote',
+              reference: 'Spoken Transcript',
+              quote: "Would it be all right if I mentioned your name when contacting him? No, please don't use my name.",
+              note: 'Vedant strictly prohibits using his identity during outreach.'
+            }
+          ],
+          what_evidence_does_not_establish: [
+            'Does not establish Rishabh\'s direct email or phone number.'
+          ],
+          discrepancy: {
+            field: 'observed_outcome',
+            upstream_claim: 'referred',
+            spoken_reality: 'Contact strictly forbade using his name ("No, please don\'t use my name").',
+            impact_explanation: 'Treating this as an authorized warm referral would severely backfire upon cold outreach to Rishabh.',
+            severity: 'high'
+          },
+          next_steps: [
+            {
+              action: 'Sales coaching on referral governance: reinforce policy that "referred" outcome requires explicit consent before citing referral source.',
+              owner: null,
+              timing: null,
+              verifiable: true
+            }
+          ],
+          is_precomputed: true
+        };
+      }
+
+      // Default: deal_next_steps
+      return {
+        headline: 'Retail Prospect (130 Stores) - Cold Outreach Plan for Business Head',
+        what_happened: 'Meera identified business head Mr. Rishabh for a 130-store retail chain. Contact Vedant provided Rishabh\'s name but explicitly forbade using his own name in the approach.',
+        why_it_matters: 'High-potential retail prospect requiring completely independent cold outreach on platform merits without referencing Vedant.',
+        evidence_citations: [
+          {
+            id: 'c09-cite-deal',
+            type: 'quote',
+            reference: 'Spoken Transcript',
+            quote: "Would it be all right if I mentioned your name when contacting him? No, please don't use my name.",
+            note: 'Outreach must proceed on independent merits.'
+          }
+        ],
+        what_evidence_does_not_establish: [
+          'Does not establish Rishabh\'s direct contact details or current software priorities.'
+        ],
+        discrepancy: {
+          field: 'observed_outcome',
+          upstream_claim: 'referred',
+          spoken_reality: 'Contact strictly forbade using his name ("No, please don\'t use my name").',
+          impact_explanation: 'Treating this as an authorized warm referral would backfire.',
+          severity: 'high'
+        },
+        next_steps: [
+          {
+            action: 'Connect with Mr. Rishabh on professional networking platform via cold value-add pitch (without mentioning Vedant).',
+            owner: 'Meera',
+            timing: null,
+            verifiable: true
+          }
+        ],
+        is_precomputed: true
+      };
+    }
   },
 
   C10: {
     routes: ['sales_coaching'],
     analysis: () => ({
       headline: 'Severe Metadata Contradiction - Contact Forbids Follow-Up and Left Company',
-      what_happened: 'Meera called Aniket regarding Meadowbrick. Aniket stated he no longer works at Meadowbrick and has moved to manufacturing. When Meera asked to call next Monday/Tuesday, Aniket bluntly refused: "No. I said I will contact you if there is anything to discuss."',
+      what_happened: 'Meera called Aniket regarding Meadowbrick. Aniket stated he no longer works at Meadowbrick and has moved to manufacturing. When Meera asked to call next Monday or Tuesday, Aniket bluntly refused: "No. I said I will contact you if there is anything to discuss."',
       why_it_matters: 'Upstream system tagged `observed_outcome: follow_up`. Rep following this tag will harass a hostile contact who lacks authority and explicitly rejected outreach.',
       evidence_citations: [
         {
@@ -336,14 +407,14 @@ export const DOSSIERS: Record<string, {
       next_steps: [
         {
           action: 'Cancel all scheduled follow-up tasks for Aniket.',
-          owner: 'Meera',
-          timing: 'Immediate',
+          owner: null,
+          timing: null,
           verifiable: true
         },
         {
           action: 'Re-prospect Meadowbrick account for new finance/procurement leadership.',
-          owner: 'SDR Lead',
-          timing: '2026-08-25',
+          owner: null,
+          timing: null,
           verifiable: true
         }
       ],
@@ -383,7 +454,7 @@ export const DOSSIERS: Record<string, {
         {
           action: 'Send corporate onboarding checklist and virtual account specification sheet to Partner A.',
           owner: 'Team member A',
-          timing: '2026-08-22',
+          timing: null,
           verifiable: true
         }
       ],
@@ -396,7 +467,7 @@ export const DOSSIERS: Record<string, {
     analysis: () => ({
       headline: 'LedgerBridge Technology Integration - Electronic Invoicing Gateway Architecture',
       what_happened: 'SpendNest strategy (Team member A) and product (Team member B) met with Supplier A from LedgerBridge to evaluate compliant electronic invoicing coverage across Singapore, Australia, and India. Discussed API integration flows, sandbox testing, and commercial licensing models.',
-      why_it_matters: 'This is a technical vendor supplier evaluation for a Q4 product extension, NOT a sales opportunity. It belongs in internal operations and engineering review, not sales pipeline.',
+      why_it_matters: 'This is a technical vendor supplier evaluation for a product extension, NOT a sales opportunity. It belongs in internal operations and engineering review, not sales pipeline.',
       evidence_citations: [
         {
           id: 'm02-cite-1',
@@ -424,20 +495,20 @@ export const DOSSIERS: Record<string, {
         }
       ],
       what_evidence_does_not_establish: [
-        'Does not establish firm Q4 delivery commitment (Team member B notes early next year is possible if schedule slips).',
+        'Does not establish firm delivery commitment (Team member B notes early next year is possible if schedule slips).',
         'Does not establish volume estimates for issued invoices since receivables module is still in development.'
       ],
       next_steps: [
         {
-          action: 'Supplier A to send volume template for country and customer tier projections.',
+          action: 'Supplier A to send calculation template for country and customer tier projections.',
           owner: 'Supplier A',
-          timing: '2026-08-22',
+          timing: null,
           verifiable: true
         },
         {
-          action: 'SpendNest team to complete volume projections and conduct short pricing explanation call before presenting to management.',
+          action: 'SpendNest team to complete volume projections and conduct short pricing review call before presenting to management.',
           owner: 'Team member A',
-          timing: '2026-08-25',
+          timing: null,
           verifiable: true
         }
       ],
@@ -447,78 +518,119 @@ export const DOSSIERS: Record<string, {
 
   M03: {
     routes: ['deal_next_steps', 'sales_coaching'],
-    analysis: () => ({
-      headline: 'Asterloom Systems - Domestic Prepaid Card Evaluation & Pricing Presentation Coaching',
-      what_happened: 'Team Member A met with Customer A and Customer B (Finance) from Asterloom Systems (~65 employees). Evaluated domestic prepaid cards for travel expenses. Key coaching moment occurred when Team Member A quoted INR 39,000 annual fee, causing Customer A to push back ("you previously told me INR 26,000"). Team Member A then clarified that INR 13,000 was a one-time accounting integration setup charge.',
-      why_it_matters: 'Core pipeline evaluation. Transparent pricing communication is critical: bundling setup fees into recurring annual quotes without upfront explanation risks trust. Prospect proposed a 4-5 employee trial before CFO sign-off.',
-      evidence_citations: [
-        {
-          id: 'm03-cite-1',
-          type: 'turn',
-          turn_number: 22,
-          speaker: 'Team member A',
-          reference: 'Turn 22',
-          note: 'Team Member A quotes INR 39,000 plus tax for the cards arrangement up to INR 13 lakh monthly band.'
-        },
-        {
-          id: 'm03-cite-2',
-          type: 'turn',
-          turn_number: 23,
-          speaker: 'Customer A',
-          reference: 'Turn 23',
-          note: 'Customer A raises price discrepancy: "But you previously told me INR 26,000. Why has that become INR 39,000?"'
-        },
-        {
-          id: 'm03-cite-3',
-          type: 'turn',
-          turn_number: 24,
-          speaker: 'Team member A',
-          reference: 'Turn 24',
-          note: 'Rep clarifies breakdown: INR 26,000 recurring subscription plus INR 13,000 one-time accounting setup.'
-        },
-        {
-          id: 'm03-cite-4',
-          type: 'turn',
-          turn_number: 26,
-          speaker: 'Customer B',
-          reference: 'Turn 26',
-          note: 'Customer B proposes starting with a 4-5 employee travel card trial before wider rollout.'
-        },
-        {
-          id: 'm03-cite-5',
-          type: 'turn',
-          turn_number: 36,
-          speaker: 'Customer B',
-          reference: 'Turn 36',
-          note: 'Customer B requires written materials for CFO: "Send the details first. We need time with the CFO and will tell you if another call is needed."'
-        }
-      ],
-      what_evidence_does_not_establish: [
-        'Does not establish whether CFO will approve the initial 4-5 employee travel card trial.',
-        'Does not establish vendor payables volume (estimated tentatively at INR 26-39 lakh/mo in Turn 34).'
-      ],
-      next_steps: [
-        {
-          action: 'Send structured proposal to Customer A and Customer B explicitly itemizing INR 26,000 annual subscription and INR 13,000 setup fee.',
-          owner: 'Team member A',
-          timing: '2026-08-22 EOD',
-          verifiable: true
-        },
-        {
-          action: 'Sales coaching 1-on-1 on fee transparency: always disclose recurring SaaS fees separately from one-time onboarding charges.',
-          owner: 'Sales Manager',
-          timing: '2026-08-25',
-          verifiable: true
-        },
-        {
-          action: 'Hold follow-up outreach until Asterloom internal CFO review completes (do not prematurely push for meetings).',
-          owner: 'Team member A',
-          timing: '2026-08-28',
-          verifiable: true
-        }
-      ],
-      is_precomputed: true
-    })
+    analysis: (_rev: number, route?: RouteCategory) => {
+      if (route === 'sales_coaching') {
+        return {
+          headline: 'Asterloom Systems - Pricing Presentation Coaching & Prepaid Expectation Gap',
+          what_happened: 'Discovery session with Customer A and Customer B from Asterloom Systems. Team Member A quoted an INR 39,000 annual fee, causing Customer A to push back ("you previously told me INR 26,000"). Team Member A then clarified that INR 13,000 was a one-time accounting setup charge. In addition, Customer A experienced surprise upon learning SpendNest issues prepaid cards rather than corporate credit cards (Turns 6-7).',
+          why_it_matters: 'Key frontline coaching case: 1) Disclose recurring subscriptions separately from one-time onboarding charges to prevent fee confusion; 2) Proactively address the prepaid-versus-credit expectation gap early in discovery.',
+          evidence_citations: [
+            {
+              id: 'm03-cite-coach-1',
+              type: 'turn',
+              turn_number: 6,
+              speaker: 'Customer A',
+              reference: 'Turn 6',
+              note: 'Prepaid gap: "Wait, these are prepaid? I had thought about a corporate credit card. A prepaid card means we have to load funds in advance."'
+            },
+            {
+              id: 'm03-cite-coach-2',
+              type: 'turn',
+              turn_number: 22,
+              speaker: 'Team member A',
+              reference: 'Turn 22',
+              note: 'Pricing quote: Team Member A quotes INR 39,000 bundled fee without breaking out setup charges.'
+            },
+            {
+              id: 'm03-cite-coach-3',
+              type: 'turn',
+              turn_number: 23,
+              speaker: 'Customer A',
+              reference: 'Turn 23',
+              note: 'Prospect friction: "But you previously told me INR 26,000. Why has that become INR 39,000?"'
+            },
+            {
+              id: 'm03-cite-coach-4',
+              type: 'turn',
+              turn_number: 24,
+              speaker: 'Team member A',
+              reference: 'Turn 24',
+              note: 'Late clarification: INR 26,000 recurring subscription plus INR 13,000 one-time accounting integration.'
+            }
+          ],
+          what_evidence_does_not_establish: [
+            'Does not establish whether rep intentionally bundled setup fees or simply misspoke.'
+          ],
+          next_steps: [
+            {
+              action: 'Coach Team Member A on fee disclosure: always present recurring SaaS subscription and one-time onboarding fees as distinct line items.',
+              owner: null,
+              timing: null,
+              verifiable: true
+            },
+            {
+              action: 'Coach sales team on addressing prepaid cash-flow objections when prospects expect revolving corporate credit.',
+              owner: null,
+              timing: null,
+              verifiable: true
+            }
+          ],
+          is_precomputed: true
+        };
+      }
+
+      // Default: deal_next_steps
+      return {
+        headline: 'Asterloom Systems - Commercial Proposal & 4-5 Employee Travel Card Trial',
+        what_happened: 'Commercial discussion with Customer A and Customer B (Finance) from Asterloom Systems (~65 employees). Customer B agreed to evaluate SpendNest via a 4-5 employee travel card trial before broader commitment, but emphasized that CFO approval of written pricing is mandatory before any next steps (Turns 28, 36). Customer noted SpendNest operates on prepaid cards rather than corporate credit (Turns 6-7).',
+        why_it_matters: 'Active mid-market pipeline deal. Commercial progress depends on delivering an itemized proposal (INR 26,000 subscription + INR 13,000 setup) for internal CFO sign-off; outreach should be paused until CFO review concludes.',
+        evidence_citations: [
+          {
+            id: 'm03-cite-deal-1',
+            type: 'turn',
+            turn_number: 24,
+            speaker: 'Team member A',
+            reference: 'Turn 24',
+            note: 'Pricing terms: INR 26,000 recurring subscription + INR 13,000 one-time accounting setup.'
+          },
+          {
+            id: 'm03-cite-deal-2',
+            type: 'turn',
+            turn_number: 26,
+            speaker: 'Customer B',
+            reference: 'Turn 26',
+            note: 'Proposed trial: Customer B suggests starting with a 4-5 employee travel card trial.'
+          },
+          {
+            id: 'm03-cite-deal-3',
+            type: 'turn',
+            turn_number: 36,
+            speaker: 'Customer B',
+            reference: 'Turn 36',
+            note: 'Decision governance: "Send the details first. We need time with the CFO and will tell you if another call is needed."'
+          }
+        ],
+        what_evidence_does_not_establish: [
+          'Does not establish whether CFO will approve the trial after reviewing written proposal.',
+          'Does not establish vendor payables volume (estimated tentatively at INR 26-39 lakh/mo in Turn 34).'
+        ],
+        next_steps: [
+          {
+            action: 'Send structured proposal to Customer A and Customer B itemizing INR 26,000 annual subscription and INR 13,000 setup fee.',
+            owner: 'Team member A',
+            timing: null,
+            verifiable: true
+          },
+          {
+            action: 'Hold follow-up outreach until Asterloom internal CFO review completes (do not prematurely push for meetings).',
+            owner: 'Team member A',
+            timing: null,
+            verifiable: true
+          }
+        ],
+        is_precomputed: true
+      };
+    }
   },
 
   M04: {
@@ -526,7 +638,7 @@ export const DOSSIERS: Record<string, {
     analysis: () => ({
       headline: 'Cedarwave Distribution - Card Migration & Corporate Credit Line Integration',
       what_happened: 'Team Member A met with Customer A and Customer B from Cedarwave Distribution to discuss migrating away from an existing card program. Customer A stated that moving from prepaid to corporate credit is their main requirement (Turn 11). Cedarwave already holds an INR 1.3 crore bank corporate credit line (Turn 22) and requested connecting bank credit cards for ~26 staff while keeping SpendNest prepaid cards for remaining employees.',
-      why_it_matters: 'Key enterprise account at migration risk. Cedarwave requires a hybrid credit + prepaid solution with transaction feeds and receipt approvals syncing to accounting, rather than an all-prepaid replacement.',
+      why_it_matters: 'Key account at migration risk. Cedarwave requires a hybrid credit + prepaid solution with transaction feeds and receipt approvals syncing to accounting, rather than an all-prepaid replacement.',
       evidence_citations: [
         {
           id: 'm04-cite-1',
@@ -559,15 +671,15 @@ export const DOSSIERS: Record<string, {
       ],
       next_steps: [
         {
-          action: 'Investigate technical and network feasibility of ingesting Cedarwave\'s bank-issued credit card transaction feeds.',
+          action: 'Investigate technical feasibility of ingesting Cedarwave bank-issued credit card transaction feeds.',
           owner: 'Team member A',
-          timing: '2026-08-25',
+          timing: null,
           verifiable: true
         },
         {
           action: 'Prepare hybrid commercial proposal: bank credit card management for 26 users plus parallel prepaid program for remainder.',
           owner: 'Team member A',
-          timing: '2026-08-26',
+          timing: null,
           verifiable: true
         }
       ],
@@ -578,35 +690,60 @@ export const DOSSIERS: Record<string, {
   M06: {
     routes: ['deal_next_steps'],
     analysis: () => ({
-      headline: 'Mapletrail Services - Branch Discovery & Decentralized Finance',
-      what_happened: 'Discovery call with Customer A handling finance for one branch of Mapletrail Services (software testing). The branch manages local software subscriptions, while main corporate finance sits at head office.',
-      why_it_matters: 'Potential expansion opportunity if branch workflow proves value to central finance.',
+      headline: 'Mapletrail Services - Accounts Receivable & Collections Automation Discovery',
+      what_happened: 'Team Member A conducted a discovery session with Customer A, who manages local finance for a software testing branch of Mapletrail Services (65 finance staff centrally). Customer A handles local payables, receivables, and compliance for ~8 clients (company overall has 65-78 customers with 260-390 invoices/month, many in foreign currency). Key pain points include manual contract review, coordinating with delivery managers to resolve payment disputes (e.g. an expense-recovery invoice held up for months), and cash application matching (discrepancies from withholding or bank fees). Team Member A pitched automated reminder workflows with escalation rules, AI exception detection, and virtual expense cards. Customer A raised data security and payment confidentiality requirements (Turn 31), which Team Member A addressed before agreeing to send information collateral.',
+      why_it_matters: 'High-volume receivables automation and cash application opportunity (260-390 monthly invoices across company). Central finance manages bank connections and supplier payables (Turn 7), but branch deals with customer invoicing bottlenecks and manual collections.',
       evidence_citations: [
         {
           id: 'm06-cite-1',
           type: 'turn',
-          turn_number: 2,
+          turn_number: 9,
           speaker: 'Customer A',
-          reference: 'Turn 2',
-          note: 'Customer A explains branch vs central finance division of responsibilities.'
+          reference: 'Turn 9',
+          note: 'Customer A explains receivables workflow: "I cover around eight clients... Depending on the contract there may be 15- or 30-day terms before the collection follow-up starts."'
         },
         {
           id: 'm06-cite-2',
           type: 'turn',
-          turn_number: 33,
+          turn_number: 10,
           speaker: 'Customer A',
-          reference: 'Turn 33',
-          note: 'Customer A requests information package to share with head office.'
+          reference: 'Turn 10',
+          note: 'Customer A details collection friction: "One expense-recovery invoice has been outstanding for months even though the same client pays the normal service invoices. We still need the delivery manager to establish why that particular item is held up."'
+        },
+        {
+          id: 'm06-cite-3',
+          type: 'turn',
+          turn_number: 12,
+          speaker: 'Customer A',
+          reference: 'Turn 12',
+          note: 'Customer A estimates invoice scale: "Around 65-78 customers. There may be several projects for each. Initially I would estimate 260-390 invoices a month, with a large total value."'
+        },
+        {
+          id: 'm06-cite-4',
+          type: 'turn',
+          turn_number: 22,
+          speaker: 'Team member A',
+          reference: 'Turn 22',
+          note: 'Team Member A explains cash application: "Cash application is another area. For example, if an invoice is INR 1.3 lakh and the payment is INR 1.17 lakh, the difference could be withholding, bank fees or an unresolved dispute."'
+        },
+        {
+          id: 'm06-cite-5',
+          type: 'turn',
+          turn_number: 31,
+          speaker: 'Customer A',
+          reference: 'Turn 31',
+          note: 'Customer A raises data security requirements: "Confidentiality is important. Payment information is sensitive. How is that protected, and is there a risk of somebody interfering with it?"'
         }
       ],
       what_evidence_does_not_establish: [
-        'Does not establish whether head office has approved decentralizing software purchasing.'
+        'Does not establish central finance ERP software vendor or whether central finance has budgeted for a third-party AR platform.',
+        'Does not establish decision-making authority between branch finance and head office central team.'
       ],
       next_steps: [
         {
-          action: 'Send branch expense management deck suited for forwarding to central finance.',
+          action: 'Send information packet covering receivables automation, cash application reconciliation, and platform security/compliance certifications to Customer A.',
           owner: 'Team member A',
-          timing: '2026-08-22',
+          timing: null,
           verifiable: true
         }
       ],
@@ -636,8 +773,8 @@ export const DOSSIERS: Record<string, {
           next_steps: [
             {
               action: 'Ingest update batch 02_update.json to populate verified meeting transcript.',
-              owner: 'System / Evaluator',
-              timing: 'Batch Ingestion',
+              owner: null,
+              timing: null,
               verifiable: true
             }
           ],
@@ -648,7 +785,7 @@ export const DOSSIERS: Record<string, {
       // Revision 2 (Update Batch)
       return {
         headline: 'Willowfield Trust - Customer Defect Review (4 UI & Payment Defects)',
-        what_happened: 'Customer A demonstrated four distinct software defects via screen share with Team Member A: 1) Event-payment description editing reverts to old wording on save (Turns 2-7); 2) "Recreate payment" direct file upload fails (workaround: save, return to invoice inbox, open Review, attach file) (Turns 8-15); 3) Reimbursement payments stuck in "Processing" state and cannot be selected (Turns 16-19); 4) "Mark as paid" retains previous item\'s amount (INR 18,200) instead of refreshing to the next payment\'s value (Turns 20-25). Team Member A took screenshots and committed to getting confirmation from engineering.',
+        what_happened: 'Customer A demonstrated four distinct software defects via screen share with Team Member A: 1) Event-payment description editing reverts to old wording on save (Turns 2-7); 2) "Recreate payment" direct file upload fails (workaround: save, return to invoice inbox, open Review, attach file) (Turns 8-15); 3) Reimbursement payments stuck in "Processing" state and cannot be selected (Turns 16-19); 4) "Mark as paid" retains previous item\'s amount (INR 18,200) instead of refreshing to the next payment\'s value (Turns 20-25). Team Member A took screenshots and committed to getting confirmation from engineering (Turn 27).',
         why_it_matters: 'Severe customer-facing UI, document upload, and payment state bugs affecting accounting accuracy. Requires immediate technical investigation and support resolution.',
         evidence_citations: [
           {
@@ -692,13 +829,13 @@ export const DOSSIERS: Record<string, {
           {
             action: 'Report the 4 documented defects (description persistence, recreate payment attachment, stuck reimbursement processing, mark as paid value retention) to engineering.',
             owner: 'Team member A',
-            timing: 'Immediate (2026-08-21)',
+            timing: null,
             verifiable: true
           },
           {
             action: 'Provide engineering confirmation and resolution ETA to Customer A.',
             owner: 'Team member A',
-            timing: '2026-08-22',
+            timing: null,
             verifiable: true
           }
         ],
@@ -709,69 +846,96 @@ export const DOSSIERS: Record<string, {
 
   M09: {
     routes: ['customer_support', 'customer_success'],
-    analysis: () => ({
-      headline: 'Brookmint Holdings - Onboarding Blocker: Expired Reset Token Defect & Account Architecture',
-      what_happened: 'Team Member A met with Customer A to resolve onboarding issues for Brookmint Holdings and Northkite Equipment. Discussion covered shared mailbox vs individual administrator permissions (Turns 9-18). When Team Member A sent a fresh password reset email during the call, clicking the newly received link failed immediately with "token has expired" (Turn 21). Team Member A committed to investigating the token defect with engineering by EOD or Monday.',
-      why_it_matters: 'Critical onboarding failure: newly generated invitation/reset tokens expire prematurely, blocking company administrator access for Brookmint Holdings (which houses the majority of users).',
-      evidence_citations: [
-        {
-          id: 'm09-cite-1',
-          type: 'turn',
-          turn_number: 21,
-          speaker: 'Customer A',
-          reference: 'Turn 21',
-          note: 'Customer A confirms fresh link failure: "It says the token has expired. This is the fresh message we just received."'
-        },
-        {
-          id: 'm09-cite-2',
-          type: 'turn',
-          turn_number: 22,
-          speaker: 'Team member A',
-          reference: 'Turn 22',
-          note: 'Team member A commitments: "I need to check that with the team. I hope to update you today, or by Monday at the latest. We have not got the Brookmint Holdings login working yet."'
-        },
-        {
-          id: 'm09-cite-3',
-          type: 'turn',
-          turn_number: 31,
-          speaker: 'Team member A',
-          reference: 'Turn 31',
-          note: 'Team member A reiterates deadline: "I will check the expired-token problem for Brookmint Holdings with the team and aim to return with an update today, otherwise Monday."'
-        },
-        {
-          id: 'm09-cite-4',
-          type: 'turn',
-          turn_number: 32,
-          speaker: 'Customer A',
-          reference: 'Turn 32',
-          note: 'Customer A next step: "I will speak to our IT team about the separate email identities. Thank you."'
-        }
-      ],
-      what_evidence_does_not_establish: [
-        'Does not establish whether the expired-token defect is caused by backend clock skew, token TTL configuration, or email client security scanners pre-fetching links.'
-      ],
-      next_steps: [
-        {
-          action: 'Investigate and resolve expired-token defect on Brookmint Holdings reset links with engineering by EOD or Monday.',
-          owner: 'Team member A',
-          timing: '2026-08-21 EOD / 2026-08-24',
-          verifiable: true
-        },
-        {
-          action: 'Customer A to consult internal IT team on establishing separate email identities for Brookmint Holdings vs Northkite Equipment.',
-          owner: 'Customer A',
-          timing: '2026-08-24',
-          verifiable: true
-        },
-        {
-          action: 'Customer A to review training video walkthroughs before scheduling subsequent admin workflow session.',
-          owner: 'Customer A',
-          timing: '2026-08-25',
-          verifiable: true
-        }
-      ],
-      is_precomputed: true
-    })
+    analysis: (_rev: number, route?: RouteCategory) => {
+      if (route === 'customer_support') {
+        return {
+          headline: 'Brookmint Holdings - Onboarding Authentication Defect: Expired Reset Token',
+          what_happened: 'Team Member A met with Customer A to resolve onboarding issues for Brookmint Holdings and Northkite Equipment. During the call, Team Member A issued a fresh password reset email (Turn 4). Customer A tested the newly arrived link live, but it failed immediately with "token has expired" (Turn 21). Team Member A committed to investigating the token defect with engineering by EOD or Monday (Turns 22, 31).',
+          why_it_matters: 'Critical authentication blocker preventing company administrator onboarding for Brookmint Holdings (the primary entity housing majority of users). Requires engineering defect investigation into token TTL or backend generation.',
+          evidence_citations: [
+            {
+              id: 'm09-cite-supp-1',
+              type: 'turn',
+              turn_number: 21,
+              speaker: 'Customer A',
+              reference: 'Turn 21',
+              note: 'Immediate token failure: "It says the token has expired. This is the fresh message we just received."'
+            },
+            {
+              id: 'm09-cite-supp-2',
+              type: 'turn',
+              turn_number: 22,
+              speaker: 'Team member A',
+              reference: 'Turn 22',
+              note: 'Engineering escalation commitment: "I need to check that with the team. I hope to update you today, or by Monday at the latest."'
+            },
+            {
+              id: 'm09-cite-supp-3',
+              type: 'turn',
+              turn_number: 31,
+              speaker: 'Team member A',
+              reference: 'Turn 31',
+              note: 'Reiterated resolution deadline: "I will check the expired-token problem for Brookmint Holdings with the team and aim to return with an update today, otherwise Monday."'
+            }
+          ],
+          what_evidence_does_not_establish: [
+            'Does not establish whether token expiry is caused by backend clock skew, short token TTL, or email security scanners pre-fetching links.'
+          ],
+          next_steps: [
+            {
+              action: 'Investigate and resolve expired-token defect on Brookmint Holdings reset links with engineering by EOD or Monday.',
+              owner: 'Team member A',
+              timing: 'Today or Monday (2026-08-24)',
+              verifiable: true
+            }
+          ],
+          is_precomputed: true
+        };
+      }
+
+      // Default: customer_success
+      return {
+        headline: 'Brookmint Holdings & Northkite - Multi-Tenant Admin Identity Architecture',
+        what_happened: 'Team Member A and Customer A reviewed multi-tenant setup across Brookmint Holdings and Northkite Equipment. Customer A initially attempted to use one shared general email account for both companies (Turns 9-18). Discussion clarified that separate administrator email identities are needed for each company workspace. Customer A agreed to consult their internal IT team (Turn 32) and review video tutorials before scheduling further admin sessions (Turn 30).',
+        why_it_matters: 'Onboarding governance milestone. Proper separation of administrative credentials ensures security and correct tenant billing once the login blocker is cleared.',
+        evidence_citations: [
+          {
+            id: 'm09-cite-cs-1',
+            type: 'turn',
+            turn_number: 30,
+            speaker: 'Customer A',
+            reference: 'Turn 30',
+            note: 'Walkthrough review: Customer A agrees to review training videos before next session.'
+          },
+          {
+            id: 'm09-cite-cs-2',
+            type: 'turn',
+            turn_number: 32,
+            speaker: 'Customer A',
+            reference: 'Turn 32',
+            note: 'IT consultation: "I will speak to our IT team about the separate email identities. Thank you."'
+          }
+        ],
+        what_evidence_does_not_establish: [
+          'Does not establish IT policy constraints on creating separate administrative email aliases at Brookmint Holdings.'
+        ],
+        next_steps: [
+          {
+            action: 'Customer A to consult internal IT team on establishing separate email identities for Brookmint Holdings vs Northkite Equipment.',
+            owner: 'Customer A',
+            timing: null,
+            verifiable: true
+          },
+          {
+            action: 'Customer A to review training video walkthroughs before scheduling subsequent admin workflow session.',
+            owner: 'Customer A',
+            timing: null,
+            verifiable: true
+          }
+        ],
+        is_precomputed: true
+      };
+    }
   },
 
   M10: {
@@ -805,7 +969,7 @@ export const DOSSIERS: Record<string, {
         {
           action: 'Provision back-office billing sandbox access for Team Member B.',
           owner: 'Team member A',
-          timing: '2026-08-22',
+          timing: null,
           verifiable: true
         }
       ],
@@ -825,7 +989,7 @@ export function getFallbackAnalysis(
     const detail = payload.recording_detail || transcript_payload?.unavailable_reason || 'No audio recorded.';
     return {
       headline: `Unattended Meeting (${status}) - ${payload.title}`,
-      what_happened: `Meeting recording status is '${status}'. Reason: ${detail}`,
+      what_happened: `Meeting recording status is '${status}'. Upstream detail: ${detail}`,
       why_it_matters: 'No usable speech captured. Record placed in intake exception triage; substantive analysis deliberately withheld.',
       evidence_citations: [
         {
@@ -841,8 +1005,8 @@ export function getFallbackAnalysis(
       next_steps: [
         {
           action: 'Verify with meeting organizer whether rescheduling is necessary.',
-          owner: payload.organizer_email || 'Meeting Organizer',
-          timing: 'Next Business Day',
+          owner: payload.organizer_email || null,
+          timing: null,
           verifiable: false
         }
       ],
@@ -851,20 +1015,27 @@ export function getFallbackAnalysis(
   }
 
   // Background call fallback (B01 - B20)
+  const rep = payload.rep_name || 'Unknown Rep';
+  const outcome = payload.observed_outcome || 'unknown';
+  const duration = payload.duration_seconds;
+  const direction = payload.direction || 'outbound';
+  const startedAt = payload.started_at;
+
   return {
-    headline: `Telephony Exception - ${payload.observed_outcome || 'Unreached'} (${payload.duration_seconds}s)`,
-    what_happened: `Call placed by rep ${payload.rep_name || 'Unknown'}. Telephony outcome: ${payload.observed_outcome || 'unknown'}. Upstream connected flag: ${payload.is_connected}.`,
-    why_it_matters: 'No transcript was captured or supplied. Stored in telephony intake; substantive analysis withheld.',
+    headline: `Telephony Intake Exception - ${outcome} (${duration}s, ${direction})`,
+    what_happened: `Telephony record ${payload.external_call_id || record_ref}: ${direction} dial by ${rep} at ${startedAt}. Duration: ${duration}s. Machine outcome: ${outcome} (upstream connected flag: ${payload.is_connected}). Part of the 8-minute automated dialer burst (23:51–23:59 IST) placed exclusively by Arun and Leela.`,
+    why_it_matters: 'No conversation transcript supplied in delivery package. Categorized in intake exceptions with zero fabricated deal value.',
     evidence_citations: [
       {
         id: `${record_ref}-telemetry`,
         type: 'telemetry',
-        reference: 'Call Metadata',
-        note: `Duration: ${payload.duration_seconds}s. Connected: ${payload.is_connected}. Outcome: ${payload.observed_outcome}`
+        reference: 'Telephony Signal Envelope',
+        note: `External ID: ${payload.external_call_id}. Rep: ${rep}. Duration: ${duration}s. Direction: ${direction}. Outcome: ${outcome}. Connected Flag: ${payload.is_connected}.`
       }
     ],
     what_evidence_does_not_establish: [
-      'Does not establish whether voice message was heard or callback is expected.'
+      'Does not establish whether voice message was heard or callback is expected.',
+      'Does not establish prospect identity or commercial intent.'
     ],
     next_steps: [],
     is_precomputed: true

@@ -107,7 +107,7 @@ export const TeamScorecard: React.FC<TeamScorecardProps> = ({
                   )}
                   {rep.name === 'Meera' && (
                     <p className="text-amber-300/90">
-                      StoreHarbor competitive battlecard focus (C05). Referral governance: forbid name-dropping on C09. C10 contact departed Meadowbrick. (Note: C06 voice was Ravi).
+                      StoreHarbor competitive presentation follow-up (C05). Referral governance: forbid name-dropping on C09. C10 contact departed Meadowbrick. (Note: C06 voice was Ravi).
                     </p>
                   )}
                   {rep.name === 'Kiran' && (

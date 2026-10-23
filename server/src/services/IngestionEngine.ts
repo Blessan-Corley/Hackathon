@@ -143,9 +143,11 @@ export class IngestionEngine {
     // Existing record with HIGHER revision
     // Rule 3: Replace full payload & transcript payload (no partial merge)
     // Rule 4: Retain manual route, override reason, review state
-    // Rule 5: If source text changed, update analysis and flag freshness
+    // Rule 5: If source text newly arrived or changed, flag freshness for re-review
     const hadTextBefore = existing.has_usable_text;
+    const oldTextLength = existing.text_length_chars;
     const isTextNewlyArrived = !hadTextBefore && hasUsableText;
+    const isTextChanged = hadTextBefore && (textLength !== oldTextLength || JSON.stringify(raw.transcript_payload) !== JSON.stringify(existing.transcript_payload));
 
     existing.current_revision = revision;
     existing.last_batch_id = batch_id;
@@ -161,11 +163,11 @@ export class IngestionEngine {
     // Analysis gets updated with newer revision
     existing.analysis = analysis;
 
-    // If text newly arrived or changed, mark analysis freshness
-    if (isTextNewlyArrived) {
+    // Contract State Machine: If text newly arrived or changed, mark analysis freshness
+    if (isTextNewlyArrived || isTextChanged) {
       existing.analysis_freshness = 'stale_pending_re-review';
       existing.review_state = 'pending_re-review';
-    } else {
+    } else if (existing.analysis_freshness !== 'stale_pending_re-review') {
       existing.analysis_freshness = hasUsableText ? 'fresh' : 'not_applicable';
     }
 
@@ -191,8 +193,13 @@ export class IngestionEngine {
     record.manual_override_reason = reason || 'Manual route applied by sales manager';
     record.manual_override_at = new Date().toISOString();
     record.is_manually_corrected = true;
-    record.review_state = 'reviewed';
-    record.analysis_freshness = 'fresh';
+
+    // Contract Rule: Editing a route does NOT automatically clear stale transcript analysis.
+    // Analysis freshness only transitions to fresh upon explicit analytical review.
+    if (record.analysis_freshness !== 'stale_pending_re-review') {
+      record.review_state = 'reviewed';
+      record.analysis_freshness = record.has_usable_text ? 'fresh' : 'not_applicable';
+    }
 
     this.persist();
     return record;

@@ -201,22 +201,22 @@ export function createApiRouter(
       passed: engine.count() === 44 && repeatRes.ingested === 0
     });
 
-    // Step 4: Manually override M07's route
+    // Step 4: Manually override M07's route to internal_ops (distinct from system suggestion)
     if (m07Initial) {
       engine.setManualRoute(
         m07Initial.source_type,
         m07Initial.source_id,
-        ['customer_support'],
-        'Evaluator Replay Test: Manual Override Prior to Update'
+        ['internal_ops'],
+        'Evaluator Replay Test: Manual Override Prior to Update (Internal Ops)'
       );
     }
     const m07Overridden = engine.getByRef('M07');
     steps.push({
       step: 3,
-      action: 'Manually Override M07 Route to Customer Support',
+      action: 'Manually Override M07 Route to Internal Operations',
       m07_manual_route: m07Overridden?.manual_routes,
       m07_is_manually_corrected: m07Overridden?.is_manually_corrected,
-      passed: m07Overridden?.is_manually_corrected === true
+      passed: m07Overridden?.is_manually_corrected === true && m07Overridden?.manual_routes?.[0] === 'internal_ops'
     });
 
     // Step 5: Ingest Update Batch (02_update.json)
@@ -231,11 +231,14 @@ export function createApiRouter(
       updated: updateRes.updated,
       m07_revision: m07Updated?.current_revision,
       m07_turns: m07Updated?.transcript_payload?.turns?.length || 0,
-      m07_override_preserved: m07Updated?.is_manually_corrected === true && m07Updated?.manual_routes?.[0] === 'customer_support',
+      m07_suggested_routes: m07Updated?.suggested_routes,
+      m07_override_preserved: m07Updated?.is_manually_corrected === true && m07Updated?.manual_routes?.[0] === 'internal_ops',
       usable_transcripts: metricsPostUpdate.usable_transcript_count,
       passed: engine.count() === 44 && 
               m07Updated?.current_revision === 2 && 
               m07Updated?.is_manually_corrected === true &&
+              m07Updated?.manual_routes?.[0] === 'internal_ops' &&
+              m07Updated?.suggested_routes?.[0] === 'customer_support' &&
               metricsPostUpdate.usable_transcript_count === 18
     });
 

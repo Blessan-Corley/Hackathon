@@ -59,7 +59,7 @@ test.describe('Tier 3 E2E Browser Test: Revenue Intelligence Inbox', () => {
 
     await expect(page.getByRole('heading', { name: /Manager Daily Briefing/i })).toBeVisible();
     await expect(page.locator('text=Phantom Follow-up on Departed Lead')).toBeVisible();
-    await expect(page.locator('text=Data Loss Defect: Event Payment Persistence')).toBeVisible();
+    await expect(page.locator('text=Software Defect Review: 4 UI & Payment Bugs')).toBeVisible();
     await expect(page.locator('text=Telephony Attribution Mismatch')).toBeVisible();
 
     await page.click('button:has-text("Close Brief")');

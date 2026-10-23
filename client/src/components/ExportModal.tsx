@@ -20,6 +20,7 @@ interface ExportModalProps {
 
 export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => {
   const [manifest, setManifest] = useState<ExportManifestEntry[]>([]);
+  const [metadata, setMetadata] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
@@ -32,8 +33,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
   const loadManifest = async () => {
     setLoading(true);
     try {
-      const data = await fetchManifest();
-      setManifest(data);
+      const data: any = await fetchManifest();
+      if (Array.isArray(data)) {
+        setManifest(data);
+      } else if (data && data.records) {
+        setManifest(data.records);
+        setMetadata(data.export_metadata);
+      }
     } catch (err: any) {
       setStatusMsg(`Error: ${err.message}`);
     } finally {

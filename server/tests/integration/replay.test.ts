@@ -20,17 +20,17 @@ describe('Tier 2 Integration Test: Full Replay Contract & REST Lifecycle', () =>
     expect(resRepeat.body.records_after).toBe(44);
     expect(resRepeat.body.is_idempotent).toBe(true);
 
-    // 4. Manually override M07's route
+    // 4. Manually override M07's route to internal_ops (distinct from system customer_support)
     const m07 = engine.getByRef('M07')!;
     const resOverride = await request(app)
       .patch(`/api/records/${m07.source_type}/${m07.source_id}/route`)
       .send({
-        routes: ['customer_support'],
-        reason: 'Manager inspection: UI bug troubleshooting'
+        routes: ['internal_ops'],
+        reason: 'Manager inspection: triage as internal operations prior to update'
       })
       .expect(200);
     expect(resOverride.body.record.is_manually_corrected).toBe(true);
-    expect(resOverride.body.record.manual_routes).toEqual(['customer_support']);
+    expect(resOverride.body.record.manual_routes).toEqual(['internal_ops']);
 
     // 5. Ingest Update Batch (02_update.json)
     const resUpdate = await request(app).post('/api/replay/update').expect(200);
@@ -39,7 +39,7 @@ describe('Tier 2 Integration Test: Full Replay Contract & REST Lifecycle', () =>
     expect(resUpdate.body.metrics.usable_transcripts).toBe(18); // Increases by 1!
     expect(resUpdate.body.m07_status.applied_revision).toBe(2);
     expect(resUpdate.body.m07_status.is_manually_corrected).toBe(true);
-    expect(resUpdate.body.m07_status.active_routes).toEqual(['customer_support']); // Preserved!
+    expect(resUpdate.body.m07_status.active_routes).toEqual(['internal_ops']); // Preserved override!
 
     // 6. Repeat Initial Import to verify NO DOWNGRADE
     const resRepeatAfterUpdate = await request(app).post('/api/replay/repeat-initial').expect(200);

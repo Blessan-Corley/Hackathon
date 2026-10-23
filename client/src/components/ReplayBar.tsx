@@ -85,11 +85,11 @@ export const ReplayBar: React.FC<ReplayBarProps> = ({
       await updateRoute(
         m07Record.source_type,
         m07Record.source_id,
-        ['customer_support'],
-        'Manager route adjustment prior to update'
+        ['internal_ops'],
+        'Manager route adjustment: triage as internal operations prior to update'
       );
       await onRefreshData();
-      setActiveMessage('M07 manually assigned to Customer Support.');
+      setActiveMessage('M07 manually assigned to Internal Operations.');
     } catch (err: any) {
       setActiveMessage(`Error: ${err.message}`);
     } finally {

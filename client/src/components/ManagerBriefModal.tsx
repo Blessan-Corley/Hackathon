@@ -132,11 +132,11 @@ export const ManagerBriefModal: React.FC<ManagerBriefModalProps> = ({
                         M07
                       </span>
                       <h5 className="text-sm font-semibold text-white">
-                        Data Loss Defect: Event Payment Persistence
+                        Software Defect Review: 4 UI &amp; Payment Bugs
                       </h5>
                     </div>
                     <p className="text-xs text-dark-400 mt-1">
-                      Organizer: team06 • Client: Customer A
+                      Organizer: team09 • Account: Willowfield Trust
                     </p>
                   </div>
                   <button
@@ -239,13 +239,13 @@ export const ManagerBriefModal: React.FC<ManagerBriefModalProps> = ({
 
               <div className="p-3.5 rounded-xl bg-dark-850 border border-white/[0.08] space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">StoreHarbor Battlecard (C05)</span>
+                  <span className="text-xs font-bold text-white">StoreHarbor Incumbent (C05)</span>
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/20">
                     Competitive
                   </span>
                 </div>
                 <p className="text-xs text-dark-300 leading-relaxed">
-                  Identified active evaluation against StoreHarbor. Deliver comparative feature brief highlighting multi-tier approval policies.
+                  Identified active incumbent StoreHarbor. Send product presentation collateral highlighting multi-tier approval policies and instant wallet controls as requested.
                 </p>
               </div>
             </div>

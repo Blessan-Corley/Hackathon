@@ -57,22 +57,22 @@ describe('Tier 1 Unit Test: IngestionEngine & Data Contract Replay Rules', () =>
     expect(engine.count()).toBe(44); // No inflation!
   });
 
-  it('Rule 4: Manual route override persists through batch updates', () => {
+  it('Rule 4: Manual route override persists through batch updates and does not overwrite with system route', () => {
     engine.ingestBatch(initialBatch);
     const m07 = engine.getByRef('M07')!;
     expect(m07.is_manually_corrected).toBe(false);
 
-    // Apply manual override
+    // Apply manual override distinct from system route suggestion (internal_ops vs customer_support)
     engine.setManualRoute(
       m07.source_type,
       m07.source_id,
-      ['customer_support'],
+      ['internal_ops'],
       'Test override prior to update'
     );
 
     const m07Overridden = engine.getByRef('M07')!;
     expect(m07Overridden.is_manually_corrected).toBe(true);
-    expect(m07Overridden.manual_routes).toEqual(['customer_support']);
+    expect(m07Overridden.manual_routes).toEqual(['internal_ops']);
     expect(m07Overridden.manual_override_reason).toBe('Test override prior to update');
 
     // Ingest update batch (revision 2)
@@ -86,9 +86,21 @@ describe('Tier 1 Unit Test: IngestionEngine & Data Contract Replay Rules', () =>
     expect(m07Updated.has_usable_text).toBe(true);
     expect(m07Updated.transcript_payload?.turns.length).toBeGreaterThan(0);
     expect(m07Updated.is_manually_corrected).toBe(true);
-    expect(m07Updated.manual_routes).toEqual(['customer_support']);
+    expect(m07Updated.manual_routes).toEqual(['internal_ops']); // Preserved!
+    expect(m07Updated.suggested_routes).toEqual(['customer_support']); // System updated independently!
     expect(m07Updated.review_state).toBe('pending_re-review');
     expect(m07Updated.analysis_freshness).toBe('stale_pending_re-review');
+
+    // Contract State Machine Check: Editing route on stale record does NOT magically make analysis fresh
+    engine.setManualRoute(m07Updated.source_type, m07Updated.source_id, ['deal_next_steps'], 'Manager routing change');
+    const m07RouteChanged = engine.getByRef('M07')!;
+    expect(m07RouteChanged.analysis_freshness).toBe('stale_pending_re-review'); // Still stale!
+
+    // Only explicit analytical review clears stale state
+    engine.setReviewState(m07RouteChanged.source_type, m07RouteChanged.source_id, 'reviewed');
+    const m07Reviewed = engine.getByRef('M07')!;
+    expect(m07Reviewed.analysis_freshness).toBe('fresh');
+    expect(m07Reviewed.review_state).toBe('reviewed');
   });
 
   it('Rule 2 (No Downgrade): Re-ingesting initial batch (rev 1) after update (rev 2) is ignored', () => {
